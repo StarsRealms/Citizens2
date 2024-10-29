@@ -412,6 +412,7 @@ permissions:
   citizens.npc.trait-configure.wolfmodifiers: {default: op}
   citizens.npc.trait-configure.woolcolor: {default: op}
   citizens.npc.trait-configure.zombiemodifier: {default: op}
+  citizens.npc.trait-configure.customentity: {default: op}
   citizens.npc.trait: {default: op}
   citizens.npc.trait.age: {default: op}
   citizens.npc.trait.anchors: {default: op}
@@ -439,6 +440,7 @@ permissions:
   citizens.npc.trait.wolfmodifiers: {default: op}
   citizens.npc.trait.woolcolor: {default: op}
   citizens.npc.trait.zombiemodifier: {default: op}
+  citizens.npc.trait.customentity: {default: op}
   citizens.npc.type: {default: op}
   citizens.npc.vulnerable: {default: op}
   citizens.npc.wolf: {default: op}
@@ -1240,6 +1242,7 @@ permissions:
       citizens.npc.trait-configure.wolfmodifiers: true
       citizens.npc.trait-configure.woolcolor: true
       citizens.npc.trait-configure.zombiemodifier: true
+      citizens.npc.trait-configure.customentity: true
       citizens.npc.trait: true
       citizens.npc.trait.age: true
       citizens.npc.trait.anchors: true
@@ -1271,6 +1274,7 @@ permissions:
       citizens.npc.vulnerable: true
       citizens.npc.wolf: true
       citizens.npc.zombiemodifier: true
+      citizens.npc.trait.customentity: true
   citizens.npc.controllable.*:
     default: op
     children:
@@ -1602,6 +1606,7 @@ permissions:
       citizens.npc.trait-configure.wolfmodifiers: true
       citizens.npc.trait-configure.woolcolor: true
       citizens.npc.trait-configure.zombiemodifier: true
+      citizens.npc.trait-configure.customentity: true
   citizens.npc.trait.*:
     default: op
     children:
@@ -1631,6 +1636,7 @@ permissions:
       citizens.npc.trait.wolfmodifiers: true
       citizens.npc.trait.woolcolor: true
       citizens.npc.trait.zombiemodifier: true
+      citizens.npc.trait.customentity: true
   citizens.script.*:
     default: op
     children:
