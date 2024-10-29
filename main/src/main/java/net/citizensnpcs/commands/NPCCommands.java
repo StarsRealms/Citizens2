@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import net.citizensnpcs.trait.*;
 import org.bukkit.Art;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -117,56 +118,14 @@ import net.citizensnpcs.commands.history.RemoveNPCHistoryItem;
 import net.citizensnpcs.editor.Editor;
 import net.citizensnpcs.npc.EntityControllers;
 import net.citizensnpcs.npc.NPCSelector;
-import net.citizensnpcs.trait.Age;
-import net.citizensnpcs.trait.Anchors;
-import net.citizensnpcs.trait.ArmorStandTrait;
-import net.citizensnpcs.trait.AttributeTrait;
-import net.citizensnpcs.trait.BatTrait;
-import net.citizensnpcs.trait.BoundingBoxTrait;
-import net.citizensnpcs.trait.ClickRedirectTrait;
-import net.citizensnpcs.trait.CommandTrait;
 import net.citizensnpcs.trait.CommandTrait.CommandTraitError;
 import net.citizensnpcs.trait.CommandTrait.ExecutionMode;
 import net.citizensnpcs.trait.CommandTrait.ItemRequirementGUI;
 import net.citizensnpcs.trait.CommandTrait.NPCCommandBuilder;
-import net.citizensnpcs.trait.Controllable;
 import net.citizensnpcs.trait.Controllable.BuiltInControls;
-import net.citizensnpcs.trait.CurrentLocation;
-import net.citizensnpcs.trait.DropsTrait;
-import net.citizensnpcs.trait.EnderCrystalTrait;
-import net.citizensnpcs.trait.EndermanTrait;
-import net.citizensnpcs.trait.EntityPoseTrait;
 import net.citizensnpcs.trait.EntityPoseTrait.EntityPose;
-import net.citizensnpcs.trait.FollowTrait;
-import net.citizensnpcs.trait.ForcefieldTrait;
-import net.citizensnpcs.trait.GameModeTrait;
-import net.citizensnpcs.trait.Gravity;
-import net.citizensnpcs.trait.HologramTrait;
-import net.citizensnpcs.trait.HomeTrait;
-import net.citizensnpcs.trait.HorseModifiers;
-import net.citizensnpcs.trait.ItemFrameTrait;
-import net.citizensnpcs.trait.LookClose;
-import net.citizensnpcs.trait.MirrorTrait;
-import net.citizensnpcs.trait.MountTrait;
-import net.citizensnpcs.trait.OcelotModifiers;
-import net.citizensnpcs.trait.PacketNPC;
-import net.citizensnpcs.trait.PaintingTrait;
-import net.citizensnpcs.trait.PausePathfindingTrait;
-import net.citizensnpcs.trait.Poses;
-import net.citizensnpcs.trait.Powered;
-import net.citizensnpcs.trait.RabbitType;
-import net.citizensnpcs.trait.RotationTrait;
-import net.citizensnpcs.trait.ScoreboardTrait;
-import net.citizensnpcs.trait.SheepTrait;
-import net.citizensnpcs.trait.ShopTrait;
 import net.citizensnpcs.trait.ShopTrait.NPCShop;
-import net.citizensnpcs.trait.SitTrait;
-import net.citizensnpcs.trait.SkinLayers;
 import net.citizensnpcs.trait.SkinLayers.Layer;
-import net.citizensnpcs.trait.SkinTrait;
-import net.citizensnpcs.trait.SlimeSize;
-import net.citizensnpcs.trait.WitherTrait;
-import net.citizensnpcs.trait.WolfModifiers;
 import net.citizensnpcs.trait.shop.StoredShops;
 import net.citizensnpcs.trait.waypoint.Waypoints;
 import net.citizensnpcs.util.Anchor;
@@ -1207,6 +1166,20 @@ public class NPCCommands {
         }
         npc.getOrAddTrait(GameModeTrait.class).setGameMode(mode);
         Messaging.sendTr(sender, Messages.GAMEMODE_SET, Util.prettyEnum(mode));
+    }
+
+    @Command(
+            aliases = { "npc" },
+            usage = "customentity [entity_resourcelocation]",
+            desc = "",
+            modifiers = { "customentity" },
+            min = 1,
+            max = 1,
+            permission = "citizens.npc.customentity")
+    @Requirements(selected = true, ownership = true)
+    public void custom(CommandContext args, CommandSender sender, NPC npc) throws CommandException{
+        npc.getOrAddTrait(CustomEntityTrait.class).setCustomEntityName(args.getString(1));
+        Messaging.sendTr(sender, "Npc custom entity set to " + args.getString(1));
     }
 
     @Command(
