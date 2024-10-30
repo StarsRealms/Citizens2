@@ -17,7 +17,7 @@ import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
-import org.bukkit.attribute.Attribute;
+import org.bukkit.Registry;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.AreaEffectCloud;
@@ -448,7 +448,7 @@ public class HologramTrait extends Trait {
             AreaEffectCloud cloud = (AreaEffectCloud) hologram.getEntity();
             if (!rendered) {
                 cloud.setRadius(0);
-                cloud.setParticle(Particle.BLOCK, Bukkit.createBlockData(Material.AIR));
+                cloud.setParticle(Particle.BLOCK_MARKER, Bukkit.createBlockData(Material.AIR));
             }
             hologram.getEntity().teleport(
                     npc.getEntity().getLocation().clone().add(offset.x,
@@ -918,7 +918,8 @@ public class HologramTrait extends Trait {
                 disp.setBackgroundColor(color);
             }
             if (SpigotUtil.getVersion()[1] >= 21 && base.getEntity() instanceof LivingEntity) {
-                AttributeInstance inst = ((LivingEntity) base.getEntity()).getAttribute(Attribute.GENERIC_SCALE);
+                AttributeInstance inst = ((LivingEntity) base.getEntity())
+                        .getAttribute(Registry.ATTRIBUTE.get(SpigotUtil.getKey("scale")));
                 if (inst != null) {
                     Transformation tf = disp.getTransformation();
                     tf.getScale().set(inst.getValue());
