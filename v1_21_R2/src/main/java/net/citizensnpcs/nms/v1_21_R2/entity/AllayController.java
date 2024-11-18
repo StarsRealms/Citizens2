@@ -67,7 +67,6 @@ public class AllayController extends MobEntityController {
 
     public static class EntityAllayNPC extends Allay implements NPCHolder {
         private final CitizensNPC npc;
-
         private int taskId = -1;
 
         public EntityAllayNPC(EntityType<? extends Allay> types, Level level) {

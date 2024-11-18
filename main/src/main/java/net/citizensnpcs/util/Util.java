@@ -18,8 +18,11 @@ import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
+import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -197,6 +200,9 @@ public class Util {
     }
 
     public static Scoreboard getDummyScoreboard() {
+        if (DUMMY_SCOREBOARD == null) {
+            DUMMY_SCOREBOARD = Bukkit.getScoreboardManager().getNewScoreboard();
+        }
         return DUMMY_SCOREBOARD;
     }
 
@@ -247,6 +253,17 @@ public class Util {
 
     public static Random getFastRandom() {
         return new XORShiftRNG();
+    }
+
+    public static <T extends Keyed> T getRegistryValue(Registry<T> registry, String... keyCandidates) {
+        for (String keyCandidate : keyCandidates) {
+            final NamespacedKey key = SpigotUtil.getKey(keyCandidate);
+            final T value = registry.get(key);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
     }
 
     public static String getTeamName(UUID id) {
@@ -632,10 +649,6 @@ public class Util {
     private static final DecimalFormat TWO_DIGIT_DECIMAL = new DecimalFormat();
 
     static {
-        try {
-            DUMMY_SCOREBOARD = Bukkit.getScoreboardManager().getNewScoreboard();
-        } catch (NullPointerException e) {
-        }
         TWO_DIGIT_DECIMAL.setMaximumFractionDigits(2);
         try {
             ItemMeta.class.getMethod("hasEquippable");

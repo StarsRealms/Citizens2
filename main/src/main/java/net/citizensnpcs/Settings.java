@@ -121,7 +121,6 @@ public class Settings {
                 "npc.hologram.default-renderer", "display"),
         DEFAULT_LOOK_CLOSE("Enable look close by default", "npc.default.look-close.enabled", false),
         DEFAULT_LOOK_CLOSE_RANGE("Default look close range in blocks", "npc.default.look-close.range", 10),
-        DEFAULT_NAME_HOLOGRAM_RENDERER("npc.hologram.default-name-renderer", ""),
         DEFAULT_NPC_HOLOGRAM_LINE_HEIGHT("Default distance between hologram lines", "npc.hologram.default-line-height",
                 0.4D),
         DEFAULT_NPC_LIMIT(
@@ -219,7 +218,6 @@ public class Settings {
         MAX_NPC_SKIN_RETRIES(
                 "How many times to try load NPC skins (due to Minecraft rate-limiting skin requests, should rarely be less than 5",
                 "npc.skins.max-retries", -1),
-        MAX_TEXT_RANGE("The maximum range in blocks for chatting", "npc.chat.options.max-text-range", 500),
         MAXIMUM_ASTAR_ITERATIONS("The maximum number of blocks to check when pathfinding",
                 "npc.pathfinding.maximum-new-pathfinder-iterations", "npc.pathfinding.new-finder.maximum-iterations",
                 1024),

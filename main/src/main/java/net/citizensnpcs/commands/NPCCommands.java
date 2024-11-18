@@ -124,8 +124,36 @@ import net.citizensnpcs.trait.CommandTrait.ItemRequirementGUI;
 import net.citizensnpcs.trait.CommandTrait.NPCCommandBuilder;
 import net.citizensnpcs.trait.Controllable.BuiltInControls;
 import net.citizensnpcs.trait.EntityPoseTrait.EntityPose;
+import net.citizensnpcs.trait.FollowTrait;
+import net.citizensnpcs.trait.ForcefieldTrait;
+import net.citizensnpcs.trait.GameModeTrait;
+import net.citizensnpcs.trait.Gravity;
+import net.citizensnpcs.trait.HologramTrait;
+import net.citizensnpcs.trait.HomeTrait;
+import net.citizensnpcs.trait.HorseModifiers;
+import net.citizensnpcs.trait.ItemFrameTrait;
+import net.citizensnpcs.trait.LookClose;
+import net.citizensnpcs.trait.MirrorTrait;
+import net.citizensnpcs.trait.MountTrait;
+import net.citizensnpcs.trait.OcelotModifiers;
+import net.citizensnpcs.trait.PacketNPC;
+import net.citizensnpcs.trait.PaintingTrait;
+import net.citizensnpcs.trait.PausePathfindingTrait;
+import net.citizensnpcs.trait.Poses;
+import net.citizensnpcs.trait.Powered;
+import net.citizensnpcs.trait.RabbitType;
+import net.citizensnpcs.trait.RotationTrait;
+import net.citizensnpcs.trait.ScaledMaxHealthTrait;
+import net.citizensnpcs.trait.ScoreboardTrait;
+import net.citizensnpcs.trait.SheepTrait;
+import net.citizensnpcs.trait.ShopTrait;
 import net.citizensnpcs.trait.ShopTrait.NPCShop;
 import net.citizensnpcs.trait.SkinLayers.Layer;
+import net.citizensnpcs.trait.SkinTrait;
+import net.citizensnpcs.trait.SlimeSize;
+import net.citizensnpcs.trait.TargetableTrait;
+import net.citizensnpcs.trait.WitherTrait;
+import net.citizensnpcs.trait.WolfModifiers;
 import net.citizensnpcs.trait.shop.StoredShops;
 import net.citizensnpcs.trait.waypoint.Waypoints;
 import net.citizensnpcs.util.Anchor;
@@ -2179,7 +2207,7 @@ public class NPCCommands {
         PaintingTrait trait = npc.getOrAddTrait(PaintingTrait.class);
         if (art != null) {
             trait.setArt(art);
-            Messaging.sendTr(sender, Messages.PAINTING_ART_SET, npc.getName(), Util.prettyEnum(art));
+            Messaging.sendTr(sender, Messages.PAINTING_ART_SET, npc.getName(), art);
             return;
         }
         throw new CommandUsageException();
@@ -2764,6 +2792,19 @@ public class NPCCommands {
         if (head != null) {
             NMS.setHeadYaw(npc.getEntity(), head);
         }
+    }
+
+    @Command(
+            aliases = { "npc" },
+            usage = "scaledmaxhealth [health]",
+            desc = "",
+            modifiers = { "scaledmaxhealth" },
+            min = 1,
+            max = 2,
+            permission = "citizens.npc.scaledmaxhealth")
+    public void scaledhealth(CommandContext args, CommandSender sender, NPC npc, @Arg(1) Double scaled) {
+        npc.getOrAddTrait(ScaledMaxHealthTrait.class).setMaxHealth(scaled);
+        Messaging.sendTr(sender, Messages.SCALED_MAX_HEALTH_SET, scaled);
     }
 
     @Command(
@@ -3365,20 +3406,15 @@ public class NPCCommands {
 
     @Command(
             aliases = { "npc" },
-            usage = "targetable (-t(emporary))",
+            usage = "targetable",
             desc = "",
             modifiers = { "targetable" },
             min = 1,
             max = 1,
-            flags = "t",
             permission = "citizens.npc.targetable")
     public void targetable(CommandContext args, CommandSender sender, NPC npc) {
-        boolean targetable = !npc.data().get(NPC.Metadata.TARGETABLE, npc.isProtected());
-        if (args.hasFlag('t')) {
-            npc.data().set(NPC.Metadata.TARGETABLE, targetable);
-        } else {
-            npc.data().setPersistent(NPC.Metadata.TARGETABLE, targetable);
-        }
+        boolean targetable = !npc.getOrAddTrait(TargetableTrait.class).isTargetable();
+        npc.getOrAddTrait(TargetableTrait.class).setTargetable(targetable);
         if (targetable && npc.getOrAddTrait(MobType.class).getType() == EntityType.PLAYER
                 && npc.shouldRemoveFromPlayerList()) {
             Messaging.sendTr(sender, Messages.TARGETABLE_PLAYERLIST_WARNING);

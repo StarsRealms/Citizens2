@@ -10,6 +10,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import net.citizensnpcs.Citizens;
+import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.api.trait.TraitFactory;
@@ -20,7 +21,55 @@ import net.citizensnpcs.api.trait.trait.MobType;
 import net.citizensnpcs.api.trait.trait.Owner;
 import net.citizensnpcs.api.trait.trait.PlayerFilter;
 import net.citizensnpcs.api.trait.trait.Spawned;
-import net.citizensnpcs.trait.*;
+import net.citizensnpcs.trait.Age;
+import net.citizensnpcs.trait.Anchors;
+import net.citizensnpcs.trait.ArmorStandTrait;
+import net.citizensnpcs.trait.AttributeTrait;
+import net.citizensnpcs.trait.BatTrait;
+import net.citizensnpcs.trait.BoundingBoxTrait;
+import net.citizensnpcs.trait.ClickRedirectTrait;
+import net.citizensnpcs.trait.CommandTrait;
+import net.citizensnpcs.trait.Controllable;
+import net.citizensnpcs.trait.CurrentLocation;
+import net.citizensnpcs.trait.DropsTrait;
+import net.citizensnpcs.trait.EnderCrystalTrait;
+import net.citizensnpcs.trait.EndermanTrait;
+import net.citizensnpcs.trait.EntityPoseTrait;
+import net.citizensnpcs.trait.FollowTrait;
+import net.citizensnpcs.trait.ForcefieldTrait;
+import net.citizensnpcs.trait.GameModeTrait;
+import net.citizensnpcs.trait.Gravity;
+import net.citizensnpcs.trait.HologramTrait;
+import net.citizensnpcs.trait.HomeTrait;
+import net.citizensnpcs.trait.HorseModifiers;
+import net.citizensnpcs.trait.ItemFrameTrait;
+import net.citizensnpcs.trait.LookClose;
+import net.citizensnpcs.trait.MirrorTrait;
+import net.citizensnpcs.trait.MountTrait;
+import net.citizensnpcs.trait.OcelotModifiers;
+import net.citizensnpcs.trait.PacketNPC;
+import net.citizensnpcs.trait.PaintingTrait;
+import net.citizensnpcs.trait.PausePathfindingTrait;
+import net.citizensnpcs.trait.Poses;
+import net.citizensnpcs.trait.Powered;
+import net.citizensnpcs.trait.RabbitType;
+import net.citizensnpcs.trait.RotationTrait;
+import net.citizensnpcs.trait.Saddle;
+import net.citizensnpcs.trait.ScaledMaxHealthTrait;
+import net.citizensnpcs.trait.ScoreboardTrait;
+import net.citizensnpcs.trait.SheepTrait;
+import net.citizensnpcs.trait.ShopTrait;
+import net.citizensnpcs.trait.SitTrait;
+import net.citizensnpcs.trait.SkinLayers;
+import net.citizensnpcs.trait.SkinTrait;
+import net.citizensnpcs.trait.SleepTrait;
+import net.citizensnpcs.trait.SlimeSize;
+import net.citizensnpcs.trait.SneakTrait;
+import net.citizensnpcs.trait.TargetableTrait;
+import net.citizensnpcs.trait.VillagerProfession;
+import net.citizensnpcs.trait.WitherTrait;
+import net.citizensnpcs.trait.WolfModifiers;
+import net.citizensnpcs.trait.WoolColor;
 import net.citizensnpcs.trait.text.Text;
 import net.citizensnpcs.trait.waypoint.Waypoints;
 import net.citizensnpcs.util.EntityPacketTracker;
@@ -34,7 +83,7 @@ public class CitizensTraitFactory implements TraitFactory {
         registerTrait(TraitInfo.create(Age.class));
         registerTrait(TraitInfo.create(ArmorStandTrait.class));
         registerTrait(TraitInfo.create(AttributeTrait.class));
-        registerTrait(TraitInfo.create(Anchors.class));
+        registerTrait(TraitInfo.create(Anchors.class).optInToStats());
         registerTrait(TraitInfo.create(BatTrait.class));
         registerTrait(TraitInfo.create(BoundingBoxTrait.class));
         registerTrait(TraitInfo.create(ClickRedirectTrait.class));
@@ -52,10 +101,10 @@ public class CitizensTraitFactory implements TraitFactory {
         registerTrait(TraitInfo.create(Gravity.class));
         registerTrait(TraitInfo.create(HomeTrait.class).optInToStats());
         registerTrait(TraitInfo.create(HorseModifiers.class));
-        registerTrait(TraitInfo.create(HologramTrait.class));
+        registerTrait(TraitInfo.create(HologramTrait.class).optInToStats());
         registerTrait(TraitInfo.create(Inventory.class));
         registerTrait(TraitInfo.create(ItemFrameTrait.class));
-        registerTrait(TraitInfo.create(LookClose.class));
+        registerTrait(TraitInfo.create(LookClose.class).optInToStats());
         registerTrait(TraitInfo.create(PaintingTrait.class));
         registerTrait(TraitInfo.create(MirrorTrait.class).optInToStats());
         registerTrait(TraitInfo.create(MountTrait.class));
@@ -81,6 +130,7 @@ public class CitizensTraitFactory implements TraitFactory {
         registerTrait(TraitInfo.create(RabbitType.class));
         registerTrait(TraitInfo.create(RotationTrait.class));
         registerTrait(TraitInfo.create(Saddle.class));
+        registerTrait(TraitInfo.create(ScaledMaxHealthTrait.class));
         registerTrait(TraitInfo.create(ScoreboardTrait.class));
         registerTrait(TraitInfo.create(SitTrait.class).optInToStats());
         registerTrait(
@@ -92,7 +142,8 @@ public class CitizensTraitFactory implements TraitFactory {
         registerTrait(TraitInfo.create(SneakTrait.class));
         registerTrait(TraitInfo.create(SlimeSize.class));
         registerTrait(TraitInfo.create(Spawned.class));
-        registerTrait(TraitInfo.create(Text.class));
+        registerTrait(TraitInfo.create(Text.class).optInToStats());
+        registerTrait(TraitInfo.create(TargetableTrait.class));
         registerTrait(TraitInfo.create(Waypoints.class).optInToStats());
         registerTrait(TraitInfo.create(WitherTrait.class));
         registerTrait(TraitInfo.create(WoolColor.class));
@@ -157,9 +208,10 @@ public class CitizensTraitFactory implements TraitFactory {
         if (info.isDefaultTrait()) {
             defaultTraits.add(info);
         }
+        info.registerListener(CitizensAPI.getPlugin());
     }
 
     public boolean trackStats(Trait trait) {
-        return registered.get(trait.getName()).trackStats();
+        return registered.get(trait.getName()).shouldTrackStats();
     }
 }
