@@ -14,7 +14,7 @@
         <craftbukkit.version>1.21.3-R0.1-SNAPSHOT</craftbukkit.version>
         <placeholderapi.version>2.11.5</placeholderapi.version>
         <citizensapi.version>${project.version}</citizensapi.version>
-        <worldguard.version>7.1.0-SNAPSHOT</worldguard.version>
+        <worldguard.version>7.0.13-SNAPSHOT</worldguard.version>
     </properties>
     <repositories>
         <repository>
@@ -164,9 +164,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <release>8</release>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <release>21</release>
+                    <source>21</source>
+                    <target>21</target>
                 </configuration>
             </plugin>
             <plugin>
