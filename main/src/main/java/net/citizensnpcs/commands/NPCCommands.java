@@ -1199,16 +1199,20 @@ public class NPCCommands {
 
     @Command(
             aliases = { "npc" },
-            usage = "customentity [entity_resourcelocation]",
+            usage = "customentity [entity]",
             desc = "",
             modifiers = { "customentity" },
             min = 1,
-            max = 1,
+            max = 2,
             permission = "citizens.npc.customentity")
     @Requirements(selected = true, ownership = true)
-    public void custom(CommandContext args, CommandSender sender, NPC npc) throws CommandException{
-        npc.getOrAddTrait(CustomEntityTrait.class).setCustomEntityName(args.getString(1));
-        Messaging.sendTr(sender, "Npc custom entity set to " + args.getString(1));
+    public void custom(CommandContext args, CommandSender sender, NPC npc, @Arg(1) String type) throws CommandException {
+        if(args.argsLength() == 1) {
+            npc.removeTrait(CommandTrait.class);
+            Messaging.sendTr(sender, "Npc custom entity clear ");
+        }
+        npc.getOrAddTrait(CustomEntityTrait.class).setCustomEntityName(type);
+        Messaging.sendTr(sender, "Npc custom entity set to " + type);
     }
 
     @Command(
