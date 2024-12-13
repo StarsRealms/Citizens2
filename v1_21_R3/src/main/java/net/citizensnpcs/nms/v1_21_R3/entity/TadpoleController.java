@@ -69,22 +69,9 @@ public class TadpoleController extends MobEntityController {
 
         @Override
         public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity entitytrackerentry) {
-            CustomEntityTrait customEntityTrait = npc.getTraitNullable(CustomEntityTrait.class);
-            if(customEntityTrait != null && customEntityTrait.getCustomEntityName() != null) {
-                EntityType<?> entityType = BuiltInRegistries.ENTITY_TYPE.getValue(ResourceLocation.parse(customEntityTrait.getCustomEntityName()));
-                return new ClientboundAddEntityPacket(
-                        this.getId(),
-                        this.getUUID(),
-                        entitytrackerentry.getPositionBase().x(),
-                        entitytrackerentry.getPositionBase().y(),
-                        entitytrackerentry.getPositionBase().z(),
-                        entitytrackerentry.getLastSentXRot(),
-                        entitytrackerentry.getLastSentYRot(),
-                        entityType,
-                        0,
-                        entitytrackerentry.getLastSentMovement(),
-                        entitytrackerentry.getLastSentYHeadRot()
-                );
+            var packet = net.citizensnpcs.nms.v1_21_R3.util.CustomEntityTraitUtil.packet(npc,entitytrackerentry,this);
+            if (packet != null) {
+                return packet;
             }
             return super.getAddEntityPacket(entitytrackerentry);
         }
