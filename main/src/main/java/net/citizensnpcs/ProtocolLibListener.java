@@ -277,7 +277,7 @@ public class ProtocolLibListener implements Listener {
         });
         manager.addPacketListener(new PacketAdapter(
                 plugin, ListenerPriority.HIGHEST, Arrays.asList(Server.ENTITY_HEAD_ROTATION, Server.ENTITY_LOOK,
-                        Server.REL_ENTITY_MOVE_LOOK, Server.ENTITY_MOVE_LOOK, Server.ENTITY_TELEPORT),
+                        Server.REL_ENTITY_MOVE_LOOK, Server.ENTITY_MOVE_LOOK, Server.ENTITY_TELEPORT, Server.ENTITY_POSITION_SYNC),
                 ListenerOptions.ASYNC) {
             @Override
             public void onPacketSending(PacketEvent event) {
@@ -317,6 +317,10 @@ public class ProtocolLibListener implements Listener {
                         || type == Server.REL_ENTITY_MOVE_LOOK || type == Server.ENTITY_TELEPORT) {
                     packet.getBytes().write(0, degToByte(session.getBodyYaw()));
                     packet.getBytes().write(1, degToByte(session.getPitch()));
+                }else if (type == Server.ENTITY_POSITION_SYNC) {
+                    //todo replace the packet,because it is record class ,cant modify fields
+                    event.setCancelled(true);
+                    return;
                 }
                 session.onPacketOverwritten();
             }

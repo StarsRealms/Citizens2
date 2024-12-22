@@ -1209,10 +1209,11 @@ public class NPCCommands {
     public void custom(CommandContext args, CommandSender sender, NPC npc, @Arg(1) String type) throws CommandException {
         if(args.argsLength() == 1) {
             npc.removeTrait(CommandTrait.class);
-            Messaging.sendTr(sender, "Npc custom entity clear ");
+            Messaging.send(sender, "Npc custom entity clear ");
+            return;
         }
         npc.getOrAddTrait(CustomEntityTrait.class).setCustomEntityName(type);
-        Messaging.sendTr(sender, "Npc custom entity set to " + type);
+        Messaging.send(sender, "Npc custom entity set to " + type);
     }
 
     @Command(

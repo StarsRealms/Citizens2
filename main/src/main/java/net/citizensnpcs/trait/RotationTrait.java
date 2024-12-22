@@ -196,7 +196,14 @@ public class RotationTrait extends Trait {
 
         public void run(Entity entity) {
             if (triple == null) {
-                triple = new PacketRotationTriple(entity);
+                List<UUID> uuidFilter = this.session.params.uuidFilter;
+                if(uuidFilter==null){
+                    uuidFilter = Bukkit.getOnlinePlayers().stream()
+                            .filter(p->this.session.params.filter.apply(p))
+                            .map(Player::getUniqueId)
+                            .toList();
+                }
+                triple = new PacketRotationTriple(entity, uuidFilter);
             }
             session.run(triple);
             if (!session.isActive()) {
@@ -209,15 +216,20 @@ public class RotationTrait extends Trait {
         private volatile float lastBodyYaw;
         private volatile float lastHeadYaw;
         private volatile float lastPitch;
+        private volatile Set<UUID> uuidFilter;
 
-        public PacketRotationTriple(Entity entity) {
+        public PacketRotationTriple(Entity entity,List<UUID> uuidFilter) {
             super(entity);
+            this.uuidFilter = new java.util.HashSet<>(uuidFilter);
         }
 
         @Override
         public void apply() {
             if (Math.abs(lastBodyYaw - bodyYaw) + Math.abs(lastHeadYaw - headYaw) + Math.abs(pitch - lastPitch) > 1) {
-                NMS.sendPositionUpdateNearby(entity, false, bodyYaw, pitch, headYaw);
+                NMS.sendPositionUpdate(entity, Bukkit.getOnlinePlayers().stream()
+                                .filter(p -> uuidFilter.contains(p.getUniqueId()))
+                                .collect(Collectors.toList())
+                        ,false, bodyYaw, pitch, headYaw);
             }
         }
 
