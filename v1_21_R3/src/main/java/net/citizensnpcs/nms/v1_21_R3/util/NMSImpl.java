@@ -495,6 +495,13 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
+    public boolean canNavigateTo(final org.bukkit.entity.Entity entity, final Location dest,
+            final NavigatorParameters params) {
+        final PathNavigation navigation = getNavigation(entity);
+        return navigation.createPath(BlockPos.containing(dest.getX(), dest.getY(), dest.getZ()), 1) != null;
+    }
+
+    @Override
     @SuppressWarnings("rawtypes")
     public Iterable<Object> createBundlePacket(List source) {
         return source.isEmpty() ? ImmutableList.of() : ImmutableList.of(new ClientboundBundlePacket(source));
@@ -2339,11 +2346,10 @@ public class NMSImpl implements NMSBridge {
         NPC npc = ((NPCHolder) minecart).getNPC();
         if (npc == null)
             return;
-        Material mat = Material.getMaterial(npc.data().get(NPC.Metadata.MINECART_ITEM, ""), false);
-        int data = npc.data().get(NPC.Metadata.MINECART_ITEM_DATA, 0); // TODO: migration for this
         int offset = npc.data().get(NPC.Metadata.MINECART_OFFSET, 0);
-        minecart.setCustomDisplay(mat != null);
-        if (mat != null) {
+        minecart.setCustomDisplay(npc.getItemProvider().get() != null);
+        if (npc.getItemProvider().get() != null) {
+            Material mat = npc.getItemProvider().get().getType();
             minecart.setDisplayBlockState(BuiltInRegistries.BLOCK.byId(mat.getId()).defaultBlockState());
         }
         minecart.setDisplayOffset(offset);
