@@ -441,20 +441,21 @@ public class ShopTrait extends Trait {
             if (meta.hasDisplayName()) {
                 meta.setDisplayName(placeholders(meta.getDisplayName(), player));
             }
-            if (!meta.hasLore()) {
-                List<String> lore = Lists.newArrayList();
-                cost.forEach(c -> lore.add(c.describe()));
-                result.forEach(r -> {
-                    if (!(r instanceof CommandAction)) {
-                        lore.add(r.describe());
-                    }
-                });
+            /*
+              if (!meta.hasLore()) {
+                 List<String> lore = Lists.newArrayList();
+                 cost.forEach(c -> lore.add(c.describe()));
+                 result.forEach(r -> {
+                     if (!(r instanceof CommandAction)) {
+                         lore.add(r.describe());
+                     }
+                 });
 
-                if (timesPurchasable > 0) {
-                    lore.add("Times purchasable: " + timesPurchasable);
-                }
-                meta.setLore(lore);
-            }
+                 if (timesPurchasable > 0) {
+                     lore.add("Times purchasable: " + timesPurchasable);
+                 }
+                 meta.setLore(lore);
+              }*/
             if (meta.hasLore()) {
                 meta.setLore(Lists.transform(meta.getLore(), line -> placeholders(line, player)));
             }
@@ -531,11 +532,15 @@ public class ShopTrait extends Trait {
             StringBuffer sb = new StringBuffer();
             Matcher matcher = PLACEHOLDER_REGEX.matcher(string);
             while (matcher.find()) {
-                matcher.appendReplacement(sb,
-                        Joiner.on(", ")
-                                .join(Iterables.transform(matcher.group(1).equalsIgnoreCase("cost") ? cost : result,
-                                        NPCShopAction::describe))
-                                .replace("$", "\\$").replace("{", "\\{"));
+                if (matcher.group(1).equalsIgnoreCase("times_purchasable")) {
+                    matcher.appendReplacement(sb, Integer.toString(timesPurchasable));
+                } else {
+                    matcher.appendReplacement(sb,
+                            Joiner.on(", ")
+                                    .join(Iterables.transform(matcher.group(1).equalsIgnoreCase("cost") ? cost : result,
+                                            NPCShopAction::describe))
+                                    .replace("$", "\\$").replace("{", "\\{"));
+                }
             }
             matcher.appendTail(sb);
             return sb.toString();
@@ -545,7 +550,8 @@ public class ShopTrait extends Trait {
         public void save(DataKey key) {
         }
 
-        private static final Pattern PLACEHOLDER_REGEX = Pattern.compile("<(cost|result)>", Pattern.CASE_INSENSITIVE);
+        private static final Pattern PLACEHOLDER_REGEX = Pattern.compile("<(cost|result|times_purchasable)>",
+                Pattern.CASE_INSENSITIVE);
     }
 
     @Menu(title = "NPC Shop Item Editor", type = InventoryType.CHEST, dimensions = { 6, 9 })
@@ -679,7 +685,7 @@ public class ShopTrait extends Trait {
                 return;
 
             InputMenus.runChatStringSetter(ctx.getMenu(), event,
-                    "Enter the new item description, currently:<br>[[" + (modified.display.getItemMeta().hasLore()
+                    "Type the new item description, currently:<br>[[" + (modified.display.getItemMeta().hasLore()
                             ? Joiner.on("<br>").skipNulls().join(modified.display.getItemMeta().getLore())
                             : "Unset"),
                     description -> {
@@ -1037,6 +1043,7 @@ public class ShopTrait extends Trait {
             Inventory syntheticInventory = Bukkit.createInventory(null, 9);
             syntheticInventory.setItem(0, evt.getClickedInventory().getItem(0));
             syntheticInventory.setItem(1, evt.getClickedInventory().getItem(1));
+
             InventoryMultiplexer multiplexer = new InventoryMultiplexer(player.getInventory(), syntheticInventory);
             trades.get(selectedTrade).onClick(shop, player, multiplexer, evt.getClick().isShiftClick(),
                     lastClickedTrade == selectedTrade);

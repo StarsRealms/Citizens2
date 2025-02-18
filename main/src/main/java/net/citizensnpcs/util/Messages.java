@@ -194,6 +194,8 @@ public class Messages {
     public static final String HORSE_COLOR_SET = "citizens.commands.npc.horse.color-set";
     public static final String HORSE_DESCRIBE = "citizens.commands.npc.horse.describe";
     public static final String HORSE_STYLE_SET = "citizens.commands.npc.horse.style-set";
+    public static final String HORSE_TAMED_SET = "citizens.commands.npc.horse.tamed-set";
+    public static final String HORSE_TAMED_UNSET = "citizens.commands.npc.horse.tamed-unset";
     public static final String INVALID_AGE = "citizens.commands.npc.age.invalid-age";
     public static final String INVALID_ANCHOR_NAME = "citizens.commands.npc.anchor.invalid-name";
     public static final String INVALID_ANIMATION = "citizens.editors.waypoints.triggers.animation.invalid-animation";
@@ -446,6 +448,7 @@ public class Messages {
     public static final String TPTO_ENTITY_NOT_FOUND = "citizens.commands.npc.tpto.to-not-found";
     public static final String TPTO_SUCCESS = "citizens.commands.npc.tpto.success";
     public static final String TRACKING_RANGE_SET = "citizens.commands.npc.trackingrange.set";
+    public static final String TRAIT_DATA_CLEARED = "citizens.commands.trait.clearsaves.cleared";
     public static final String TRAIT_LOAD_FAILED = "citizens.notifications.trait-load-failed";
     public static final String TRAIT_ONSPAWN_FAILED = "citizens.notifications.trait-onspawn-failed";
     public static final String TRAITS_ADDED = "citizens.commands.trait.added";
