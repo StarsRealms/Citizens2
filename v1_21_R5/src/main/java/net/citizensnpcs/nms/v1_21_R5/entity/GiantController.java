@@ -64,7 +64,7 @@ public class GiantController extends MobEntityController {
 
         @Override
         public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity entitytrackerentry) {
-            var packet = net.citizensnpcs.nms.v1_21_R3.util.CustomEntityTraitUtil.packet(npc,entitytrackerentry,this);
+            var packet = net.citizensnpcs.nms.v1_21_R5.util.CustomEntityTraitUtil.packet(npc,entitytrackerentry,this);
             if (packet != null) {
                 return packet;
             }
