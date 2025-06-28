@@ -1,7 +1,6 @@
 package net.citizensnpcs.trait.waypoint;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import org.bukkit.Bukkit;
@@ -23,7 +22,6 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 
 import ch.ethz.globis.phtree.PhTreeSolid;
 import net.citizensnpcs.api.CitizensAPI;
-import net.citizensnpcs.api.ai.GoalController.GoalEntry;
 import net.citizensnpcs.api.ai.goals.WanderGoal;
 import net.citizensnpcs.api.command.CommandContext;
 import net.citizensnpcs.api.npc.NPC;
@@ -140,6 +138,11 @@ public class WanderWaypointProvider implements WaypointProvider {
                     Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> {
                         Object region = null;
                         String regionId = message.replace("worldguardregion", "").trim();
+                        if (regionId.isEmpty()) {
+                            setWorldGuardRegion(null);
+                            Messaging.sendTr(sender, Messages.WANDER_WAYPOINTS_WORLDGUARD_REGION_SET, "");
+                            return;
+                        }
                         try {
                             RegionManager manager = WorldGuard.getInstance().getPlatform().getRegionContainer()
                                     .get(BukkitAdapter.adapt(npc.getStoredLocation().getWorld()));
@@ -152,7 +155,7 @@ public class WanderWaypointProvider implements WaypointProvider {
                             return;
                         }
                         setWorldGuardRegion(regionId);
-                        Messaging.sendErrorTr(sender, Messages.WANDER_WAYPOINTS_WORLDGUARD_REGION_SET, regionId);
+                        Messaging.sendTr(sender, Messages.WANDER_WAYPOINTS_WORLDGUARD_REGION_SET, regionId);
                     });
                 } else if (message.startsWith("pathfind")) {
                     event.setCancelled(true);
@@ -271,12 +274,8 @@ public class WanderWaypointProvider implements WaypointProvider {
             if (paused) {
                 currentGoal.pause();
             }
-        }
-        Iterator<GoalEntry> itr = npc.getDefaultGoalController().iterator();
-        while (itr.hasNext()) {
-            if (itr.next().getGoal() instanceof WanderGoal) {
-                itr.remove();
-            }
+        } else {
+            npc.getDefaultGoalController().removeGoal(currentGoal);
         }
         npc.getDefaultGoalController().addGoal(currentGoal, 1);
     }

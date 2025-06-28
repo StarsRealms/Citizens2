@@ -36,7 +36,6 @@ import org.joml.Vector3d;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import net.citizensnpcs.Settings.Setting;
@@ -141,7 +140,7 @@ public class HologramTrait extends Trait {
     private HologramRenderer createNameRenderer() {
         HologramRenderer renderer;
         // String setting = SpigotUtil.getVersion()[1] <= 8 ? "armorstand" : "areaeffectcloud";
-        String setting = "armorstand_vehicle";
+        String setting = SpigotUtil.getVersion()[1] >= 20 ? "armorstand_vehicle" : "armorstand";
         renderer = createRenderer(setting);
         if (HologramRendererCreateEvent.handlers.getRegisteredListeners().length > 0) {
             HologramRendererCreateEvent event = new HologramRendererCreateEvent(npc, renderer, true);
@@ -334,6 +333,7 @@ public class HologramTrait extends Trait {
             }
             if (updatePosition || nameLine.renderer.getEntities().size() == 0) {
                 nameLine.render(offset);
+                nameLine.renderer.getEntities().forEach(e -> NMS.setSneaking(e, NMS.isSneaking(npc.getEntity())));
             }
         }
         for (int i = 0; i < lines.size(); i++) {
@@ -379,11 +379,14 @@ public class HologramTrait extends Trait {
     }
 
     public void setDefaultBackgroundColor(Color color) {
-        this.defaultBackgroundColor = color;
-        for (HologramLine line : Iterables.concat(lines, ImmutableList.of(nameLine))) {
+        defaultBackgroundColor = color;
+        for (HologramLine line : lines) {
             if (line.backgroundColor == null) {
                 line.setBackgroundColor(color);
             }
+        }
+        if (nameLine != null && nameLine.backgroundColor == null) {
+            nameLine.setBackgroundColor(color);
         }
         reloadLineHolograms();
     }
@@ -547,6 +550,9 @@ public class HologramTrait extends Trait {
         public void setBackgroundColor(Color color) {
             this.backgroundColor = color;
             if (color != null) {
+                if (renderer != null) {
+                    renderer.destroy();
+                }
                 renderer = new TextDisplayRenderer();
                 renderer.updateText(npc, text);
             }
@@ -567,6 +573,9 @@ public class HologramTrait extends Trait {
         public void setTextShadow(boolean shadow) {
             this.shadow = shadow;
             if (!shadow) {
+                if (renderer != null) {
+                    renderer.destroy();
+                }
                 renderer = new TextDisplayRenderer();
                 renderer.updateText(npc, text);
             }
@@ -683,6 +692,10 @@ public class HologramTrait extends Trait {
         public void setRenderer(HologramRenderer renderer) {
             Objects.requireNonNull(renderer);
             this.renderer = renderer;
+        }
+
+        public static HandlerList getHandlerList() {
+            return handlers;
         }
 
         private static final HandlerList handlers = new HandlerList();

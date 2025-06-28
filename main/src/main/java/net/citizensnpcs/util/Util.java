@@ -262,7 +262,7 @@ public class Util {
     }
 
     public static Random getFastRandom() {
-        return new XORShiftRNG();
+        return RANDOM;
     }
 
     public static <T extends Keyed> T getRegistryValue(Registry<T> registry, String... keyCandidates) {
@@ -365,6 +365,12 @@ public class Util {
         } catch (NoSuchFieldError e) {
             return false;
         }
+    }
+
+    public static <T extends Keyed> String listValuesPretty(Class<T> values) {
+        return "<yellow>" + Joiner.on("<green>, <yellow>")
+                .join(Bukkit.getRegistry(values).stream().map(k -> k.getKey().getKey()).iterator()).replace('_', ' ')
+                .toLowerCase(Locale.ROOT);
     }
 
     public static String listValuesPretty(Object[] values) {
@@ -626,10 +632,10 @@ public class Util {
 
     private static String BEDROCK_NAME_PREFIX = ".";
     private static Scoreboard DUMMY_SCOREBOARD;
+    private static final Random RANDOM = new XORShiftRNG();
     private static boolean SUPPORTS_BUKKIT_GETENTITY = true;
     private static boolean SUPPORTS_HAS_EQUIPPABLE = false;
     private static final DecimalFormat TWO_DIGIT_DECIMAL = new DecimalFormat();
-
     static {
         TWO_DIGIT_DECIMAL.setMaximumFractionDigits(2);
         try {

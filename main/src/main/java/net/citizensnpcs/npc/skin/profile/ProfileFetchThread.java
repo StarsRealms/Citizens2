@@ -1,14 +1,13 @@
 package net.citizensnpcs.npc.skin.profile;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
@@ -34,7 +33,7 @@ import net.citizensnpcs.util.Util;
  * @see ProfileFetcher
  */
 class ProfileFetchThread implements Runnable {
-    private final Deque<ProfileRequest> queue = new ArrayDeque<>();
+    private final List<ProfileRequest> queue = new ArrayList<>();
     private final Map<String, ProfileRequest> requested = new HashMap<>(40);
     private final Object sync = new Object(); // sync for queue & requested fields
 
@@ -51,7 +50,7 @@ class ProfileFetchThread implements Runnable {
      *
      * @see ProfileFetcher#fetch
      */
-    void fetch(String name, @Nullable ProfileFetchHandler handler) {
+    void fetch(String name, @Nullable Consumer<ProfileRequest> handler) {
         Objects.requireNonNull(name);
 
         name = name.toLowerCase(Locale.ROOT);
@@ -78,7 +77,7 @@ class ProfileFetchThread implements Runnable {
         }
     }
 
-    public void fetchForced(String name, ProfileFetchHandler handler) {
+    public void fetchForced(String name, Consumer<ProfileRequest> handler) {
         Objects.requireNonNull(name);
 
         name = name.toLowerCase(Locale.ROOT);
@@ -204,9 +203,12 @@ class ProfileFetchThread implements Runnable {
         synchronized (sync) {
             if (queue.isEmpty())
                 return;
-
-            requests = new ArrayList<>(queue);
-            queue.clear();
+            requests = new ArrayList<>(10);
+            for (int i = 0; i < 30; i++) {
+                if (queue.isEmpty())
+                    break;
+                requests.add(queue.remove(queue.size() - 1));
+            }
         }
         try {
             fetchRequests(requests);
@@ -218,7 +220,7 @@ class ProfileFetchThread implements Runnable {
         }
     }
 
-    private static void addHandler(ProfileRequest request, ProfileFetchHandler handler) {
+    private static void addHandler(ProfileRequest request, Consumer<ProfileRequest> handler) {
         Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> request.addHandler(handler), 1);
     }
 
@@ -252,7 +254,7 @@ class ProfileFetchThread implements Runnable {
                 || cause != null && (cause.contains("403 Forbidden") || cause.contains("too many requests"));
     }
 
-    private static void sendResult(ProfileFetchHandler handler, ProfileRequest request) {
-        Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> handler.onResult(request), 1);
+    private static void sendResult(Consumer<ProfileRequest> handler, ProfileRequest request) {
+        Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(), () -> handler.accept(request), 1);
     }
 }

@@ -10,8 +10,11 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.MemoryConfiguration;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.util.DataKey;
@@ -62,8 +65,9 @@ public class Settings {
         if (!Setting.DEBUG_FILE.asString().isEmpty()) {
             file = new File(CitizensAPI.getPlugin().getDataFolder(), Setting.DEBUG_FILE.asString());
         }
-        Messaging.configure(file, Setting.DEBUG_MODE.asBoolean(), Setting.MESSAGE_COLOUR.asString(),
-                Setting.HIGHLIGHT_COLOUR.asString(), Setting.ERROR_COLOUR.asString());
+        Messaging.configure(file, Setting.DEBUG_MODE.asBoolean(), Setting.RESET_FORMATTING_ON_COLOR_CHANGE.asBoolean(),
+                Setting.MESSAGE_COLOUR.asString(), Setting.HIGHLIGHT_COLOUR.asString(),
+                Setting.ERROR_COLOUR.asString());
     }
 
     public enum Setting {
@@ -196,7 +200,7 @@ public class Settings {
         ERROR_COLOUR("general.color-scheme.message-error", "<red>"),
         FOLLOW_ACROSS_WORLDS("Whether /npc follow will teleport across worlds to follow its target",
                 "npc.follow.teleport-across-worlds", false),
-        HIGHLIGHT_COLOUR("general.color-scheme.message-highlight", "yellow"),
+        HIGHLIGHT_COLOUR("general.color-scheme.message-highlight", "<yellow>"),
         HOLOGRAM_ALWAYS_UPDATE_POSITION("Whether to always update the hologram position every tick",
                 "npc.hologram.always-update-position", false),
         HOLOGRAM_UPDATE_RATE("How often to update hologram names (including placeholders)",
@@ -233,6 +237,8 @@ public class Settings {
         NPC_COMMAND_GLOBAL_COMMAND_COOLDOWN(
                 "The global cooldown before a command can be used again, must be in seconds",
                 "npc.commands.global-delay-seconds", "npc.commands.global-cooldown", "1s"),
+        NPC_COMMAND_GLOBAL_MAXIMUM_TIMES_USED_MESSAGE("npc.commands.error-messages.global-maximum-times-used",
+                "You have reached the maximum number of uses ({0})."),
         NPC_COMMAND_MAXIMUM_TIMES_USED_MESSAGE("npc.commands.error-messages.maximum-times-used",
                 "You have reached the maximum number of uses ({0})."),
         NPC_COMMAND_MISSING_ITEM_MESSAGE("npc.commands.error-messages.missing-item", "Missing {1} {0}"),
@@ -245,7 +251,7 @@ public class Settings {
                 "Please wait for {minutes} minutes and {seconds_over} seconds."),
         NPC_COMMAND_ON_GLOBAL_COOLDOWN_MESSAGE("npc.commands.error-messages.on-global-cooldown",
                 "Please wait for {minutes} minutes and {seconds_over} seconds."),
-        NPC_COST("The default cost to create an NPC", "economy.npc.cost", "npc.defaults.npc-cost", 100D),
+        NPC_COST("The default cost to create an NPC", "npc.defaults.npc-cost", "npc.default.npc-cost", 100D),
         NPC_SKIN_FETCH_DEFAULT(
                 "Whether to try and look for the player skin for all new NPCs<br>If this is set to false and you create an NPC named Dinnerbone, the NPC will have the default (steve/alex/etc) skin rather than trying to fetch the Dinnerbone skin",
                 "npc.skins.try-fetch-default-skin", true),
@@ -262,11 +268,16 @@ public class Settings {
         PATHFINDER_FALL_DISTANCE(
                 "The default allowed maximum fall distance when pathfinding, set to -1 to use the default value",
                 "npc.pathfinding.allowed-fall-distance", -1),
+        PATHFINDER_TYPE("The pathfinder type.<br>Valid options are: CITIZENS or MINECRAFT.",
+                "npc.pathfinding.pathfinder-type", "MINECRAFT"),
         PLACEHOLDER_SKIN_UPDATE_FREQUENCY("How often to update skin placeholders",
                 "npc.skins.placeholder-update-frequency-ticks", "npc.skins.placeholder-update-frequency", "5m"),
         PLAYER_TELEPORT_DELAY("npc.delay-player-teleport-ticks", "npc.delay-player-teleport", -1),
         REMOVE_PLAYERS_FROM_PLAYER_LIST("Whether to remove NPCs from the Java list of players",
                 "npc.player.remove-from-list", true),
+        RESET_FORMATTING_ON_COLOR_CHANGE(
+                "Whether to reset formatting on color change.<br>Emulates old color code behavior.",
+                "general.reset-formatting-on-color-change", false),
         RESET_YAW_ON_SPAWN(
                 "Whether to reset NPC yaw on spawn<br>Currently this is implemented by an arm swing animation due to Minecraft limitations",
                 "npc.default.reset-yaw-on-spawn", true),
@@ -277,26 +288,28 @@ public class Settings {
         SELECTION_ITEM("The default item in hand to select an NPC", "npc.selection.item", "stick"),
         SELECTION_MESSAGE("npc.selection.message", "Selected [[<npc>]] (ID [[<id>]])."),
         SERVER_OWNS_NPCS("Whether the server owns NPCs rather than individual players", "npc.server-ownership", false),
+        SHOP_DEFAULT_ITEM_SETTINGS("npc.shops.default-item",
+                Maps.asMap(
+                        Sets.newHashSet("times-purchasable", "max-repeats-on-shift-click", "result-message", "name",
+                                "cost-message", "lore", "already-purchased-message", "click-to-confirm-message"),
+                        s -> "")),
         SHOP_GLOBAL_VIEW_PERMISSION(
                 "The global view permission that players need to view any NPC shop<br>Defaults to empty (no permission required).",
-                "npc.shops.global-view-permission", "npc.defaults.shops.global-view-permission", ""),
+                "npc.defaults.shops.global-view-permission", "npc.shops.global-view-permission", ""),
         STORAGE_FILE("storage.file", "saves.yml"),
         TABLIST_REMOVE_PACKET_DELAY("How long to wait before sending the tablist remove packet",
-                "npc.tablist.remove-packet-delay", "1t"),
+                "npc.tablist.remove-packet-delay", "2t"),
         TALK_CLOSE_TO_NPCS("Whether to talk to NPCs (and therefore bystanders) as well as players",
                 "npc.chat.options.talk-to-npcs", true),
         TALK_ITEM("The item filter to talk with", "npc.text.talk-item", "*"),
         USE_BOAT_CONTROLS("Whether to change vehicle direction with movement instead of strafe controls",
                 "npc.controllable.use-boat-controls", true),
-        USE_NEW_PATHFINDER(
-                "Whether to use the Citizens pathfinder instead of the Minecraft pathfinder<br>Much more flexible, but may have different performance to Minecraft's pathfinder",
-                "npc.pathfinding.use-new-finder", false),
-        USE_SCOREBOARD_TEAMS("npc.scoreboard-teams.enable", "npc.defaults.enable-scoreboard-teams", true),
-        WARN_ON_RELOAD("general.reload-warning-enabled", true),;
+        USE_SCOREBOARD_TEAMS("npc.defaults.enable-scoreboard-teams", "npc.default.enable-scoreboard-teams", true),
+        WARN_ON_RELOAD("general.reload-warning-enabled", true);
 
         private String comments;
         private Duration duration;
-        private String migrate;
+        private String migrateFrom;
         protected final String path;
         protected Object value;
 
@@ -307,7 +320,7 @@ public class Settings {
 
         Setting(String migrateOrComments, String path, Object value) {
             if (migrateOrComments.contains(".") && !migrateOrComments.contains(" ")) {
-                migrate = migrateOrComments;
+                migrateFrom = migrateOrComments;
             } else {
                 comments = migrateOrComments;
             }
@@ -316,7 +329,7 @@ public class Settings {
         }
 
         Setting(String comments, String migrate, String path, Object value) {
-            this.migrate = migrate;
+            this.migrateFrom = migrate;
             this.comments = comments;
             this.path = path;
             this.value = value;
@@ -355,6 +368,13 @@ public class Settings {
             return Util.convert(TimeUnit.SECONDS, duration);
         }
 
+        public ConfigurationSection asSection() {
+            if (!(value instanceof ConfigurationSection))
+                return new MemoryConfiguration();
+
+            return (ConfigurationSection) value;
+        }
+
         public String asString() {
             return value.toString();
         }
@@ -368,9 +388,9 @@ public class Settings {
 
         protected void loadFromKey(DataKey root) {
             setComments(root);
-            if (migrate != null && root.keyExists(migrate) && !root.keyExists(path)) {
-                value = root.getRaw(migrate);
-                root.removeKey(migrate);
+            if (migrateFrom != null && root.keyExists(migrateFrom) && !root.keyExists(path)) {
+                value = root.getRaw(migrateFrom);
+                root.removeKey(migrateFrom);
             } else {
                 value = root.getRaw(path);
             }

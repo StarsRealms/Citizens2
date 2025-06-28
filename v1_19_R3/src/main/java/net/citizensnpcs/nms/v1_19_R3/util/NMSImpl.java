@@ -8,12 +8,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -242,6 +242,7 @@ import net.citizensnpcs.trait.versioned.ParrotTrait;
 import net.citizensnpcs.trait.versioned.PhantomTrait;
 import net.citizensnpcs.trait.versioned.PiglinTrait;
 import net.citizensnpcs.trait.versioned.PolarBearTrait;
+import net.citizensnpcs.trait.versioned.PotionEffectsTrait;
 import net.citizensnpcs.trait.versioned.PufferFishTrait;
 import net.citizensnpcs.trait.versioned.ShulkerTrait;
 import net.citizensnpcs.trait.versioned.SnifferTrait.SnifferState;
@@ -249,6 +250,7 @@ import net.citizensnpcs.trait.versioned.SnowmanTrait;
 import net.citizensnpcs.trait.versioned.SpellcasterTrait;
 import net.citizensnpcs.trait.versioned.TextDisplayTrait;
 import net.citizensnpcs.trait.versioned.TropicalFishTrait;
+import net.citizensnpcs.trait.versioned.VexTrait;
 import net.citizensnpcs.trait.versioned.VillagerTrait;
 import net.citizensnpcs.trait.versioned.WardenTrait;
 import net.citizensnpcs.util.EmptyChannel;
@@ -560,7 +562,7 @@ public class NMSImpl implements NMSBridge {
 
             @Override
             public void unlinkAll(Consumer<Player> callback) {
-                handle.remove(RemovalReason.KILLED);
+                handle.remove(RemovalReason.DISCARDED);
                 for (ServerPlayerConnection link : Lists.newArrayList(linked)) {
                     Player entity = link.getPlayer().getBukkitEntity();
                     unlink(entity);
@@ -977,11 +979,13 @@ public class NMSImpl implements NMSBridge {
         registerTraitWithCommand(manager, PandaTrait.class);
         registerTraitWithCommand(manager, PiglinTrait.class);
         registerTraitWithCommand(manager, PhantomTrait.class);
+        registerTraitWithCommand(manager, PotionEffectsTrait.class);
         registerTraitWithCommand(manager, PolarBearTrait.class);
         registerTraitWithCommand(manager, PufferFishTrait.class);
         registerTraitWithCommand(manager, SpellcasterTrait.class);
         registerTraitWithCommand(manager, ShulkerTrait.class);
         registerTraitWithCommand(manager, SnowmanTrait.class);
+        registerTraitWithCommand(manager, VexTrait.class);
         registerTraitWithCommand(manager, TextDisplayTrait.class);
         registerTraitWithCommand(manager, TropicalFishTrait.class);
         registerTraitWithCommand(manager, VillagerTrait.class);
@@ -1370,7 +1374,7 @@ public class NMSImpl implements NMSBridge {
 
     @Override
     public void remove(org.bukkit.entity.Entity entity) {
-        getHandle(entity).remove(RemovalReason.KILLED);
+        getHandle(entity).remove(RemovalReason.DISCARDED);
     }
 
     @Override
@@ -2274,9 +2278,9 @@ public class NMSImpl implements NMSBridge {
         entity.calculateEntityAnimation(entity instanceof net.minecraft.world.entity.animal.FlyingAnimal);
     }
 
-    public static TreeMap<?, ?> getBehaviorMap(LivingEntity entity) {
+    public static Map<?, ?> getBehaviorMap(LivingEntity entity) {
         try {
-            return (TreeMap<?, ?>) BEHAVIOR_TREE_MAP.invoke(entity.getBrain());
+            return (Map<?, ?>) BEHAVIOR_TREE_MAP.invoke(entity.getBrain());
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -2597,15 +2601,15 @@ public class NMSImpl implements NMSBridge {
         if (npc.useMinecraftAI()) {
             restoreGoals(npc, entity.goalSelector, entity.targetSelector);
             if (npc.data().has("behavior-map")) {
-                TreeMap behavior = npc.data().get("behavior-map");
+                Map behavior = npc.data().get("behavior-map");
                 getBehaviorMap(entity).putAll(behavior);
                 npc.data().remove("behavior-map");
             }
         } else {
             clearGoals(npc, entity.goalSelector, entity.targetSelector);
-            TreeMap behaviorMap = getBehaviorMap(entity);
+            Map behaviorMap = getBehaviorMap(entity);
             if (behaviorMap.size() > 0) {
-                npc.data().set("behavior-map", new TreeMap(behaviorMap));
+                npc.data().set("behavior-map", new HashMap(behaviorMap));
                 behaviorMap.clear();
             }
         }

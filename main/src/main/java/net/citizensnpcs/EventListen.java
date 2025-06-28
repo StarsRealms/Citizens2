@@ -76,6 +76,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 
 import net.citizensnpcs.Settings.Setting;
+import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.ai.event.NavigationBeginEvent;
 import net.citizensnpcs.api.ai.event.NavigationCompleteEvent;
 import net.citizensnpcs.api.event.CitizensPreReloadEvent;
@@ -107,6 +108,7 @@ import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.trait.trait.Owner;
 import net.citizensnpcs.api.trait.trait.PlayerFilter;
 import net.citizensnpcs.api.util.Messaging;
+import net.citizensnpcs.api.util.SpigotUtil;
 import net.citizensnpcs.editor.Editor;
 import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.npc.skin.SkinUpdateTracker;
@@ -285,14 +287,16 @@ public class EventListen implements Listener {
                 new double[] { (event.getChunk().getX() << 4) - 0.5, 0, (event.getChunk().getZ() << 4) - 0.5 },
                 new double[] { (event.getChunk().getX() + 1 << 4) + 0.5, 256,
                         (event.getChunk().getZ() + 1 << 4) + 0.5 }));
-        for (Entity entity : event.getChunk().getEntities()) {
-            NPC npc = plugin.getNPCRegistry().getNPC(entity);
-            // XXX npc#isSpawned() checks valid status which is now inconsistent on chunk unload
-            // between different server software so check for npc.getEntity() == null instead.
-            if (npc == null || npc.getEntity() == null || toDespawn.contains(npc))
-                continue;
+        if (SpigotUtil.getVersion()[1] < 21) {
+            for (Entity entity : event.getChunk().getEntities()) {
+                NPC npc = plugin.getNPCRegistry().getNPC(entity);
+                // XXX npc#isSpawned() checks valid status which is now inconsistent on chunk unload
+                // between different server software so check for npc.getEntity() == null instead.
+                if (npc == null || npc.getEntity() == null || toDespawn.contains(npc))
+                    continue;
 
-            toDespawn.add(npc);
+                toDespawn.add(npc);
+            }
         }
         if (toDespawn.isEmpty())
             return;
@@ -401,7 +405,7 @@ public class EventListen implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onEntityDeath(EntityDeathEvent event) {
         NPC npc = plugin.getNPCRegistry().getNPC(event.getEntity());
         if (npc == null)
@@ -531,7 +535,9 @@ public class EventListen implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onNPCLinkToPlayer(NPCLinkToPlayerEvent event) {
         NPC npc = event.getNPC();
-        NMS.markPoseDirty(npc.getEntity());
+        if (npc.isSpawned()) {
+            NMS.markPoseDirty(npc.getEntity());
+        }
         if (npc.getEntity() instanceof SkinnableEntity) {
             SkinnableEntity skinnable = (SkinnableEntity) npc.getEntity();
             if (skinnable.getSkinTracker().getSkin() != null) {
@@ -622,7 +628,7 @@ public class EventListen implements Listener {
         checkCreationEvent(event);
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerDeath(PlayerDeathEvent event) {
         NPC npc = plugin.getNPCRegistry().getNPC(event.getEntity());
         if (npc == null)
@@ -767,9 +773,9 @@ public class EventListen implements Listener {
     public void onPotionSplashEvent(PotionSplashEvent event) {
         for (LivingEntity entity : event.getAffectedEntities()) {
             NPC npc = plugin.getNPCRegistry().getNPC(entity);
-            if (npc == null) {
+            if (npc == null)
                 continue;
-            }
+
             if (npc.isProtected()) {
                 event.setIntensity(entity, 0);
             }
@@ -778,6 +784,11 @@ public class EventListen implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onProjectileHit(ProjectileHitEvent event) {
+        NPC npc = CitizensAPI.getNPCRegistry().getNPC(event.getHitEntity());
+        if (npc != null && npc.isProtected() && event.getEntityType().name().contains("WIND_CHARGE")) {
+            event.setCancelled(true);
+            return;
+        }
         if (!(event.getEntity() instanceof FishHook))
             return;
         NMS.removeHookIfNecessary((FishHook) event.getEntity());

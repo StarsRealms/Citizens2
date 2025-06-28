@@ -189,6 +189,7 @@ import net.citizensnpcs.trait.versioned.PolarBearTrait;
 import net.citizensnpcs.trait.versioned.ShulkerTrait;
 import net.citizensnpcs.trait.versioned.SnowmanTrait;
 import net.citizensnpcs.trait.versioned.SpellcasterTrait;
+import net.citizensnpcs.trait.versioned.VexTrait;
 import net.citizensnpcs.util.EmptyChannel;
 import net.citizensnpcs.util.EntityPacketTracker;
 import net.citizensnpcs.util.EntityPacketTracker.PacketAggregator;
@@ -784,6 +785,7 @@ public class NMSImpl implements NMSBridge {
         registerTraitWithCommand(manager, PolarBearTrait.class);
         registerTraitWithCommand(manager, ShulkerTrait.class);
         registerTraitWithCommand(manager, SnowmanTrait.class);
+        registerTraitWithCommand(manager, VexTrait.class);
         registerTraitWithCommand(manager, SpellcasterTrait.class);
     }
 
@@ -1446,7 +1448,7 @@ public class NMSImpl implements NMSBridge {
         PerPlayerMetadata<Long> meta = CitizensAPI.getLocationLookup().registerMetadata("sleeping", null);
         if (sleep) {
             List<Player> nearbyPlayers = Lists.newArrayList(
-                    Iterables.filter(CitizensAPI.getLocationLookup().getNearbyVisiblePlayers(entity, 64), p -> {
+                    Iterables.filter(CitizensAPI.getLocationLookup().getNearbyPlayers(entity.getLocation(), 64), p -> {
                         Long time = meta.getMarker(p.getUniqueId(), entity.getUniqueId().toString());
                         if (time == null || Math.abs(System.currentTimeMillis() - time) > 5000)
                             return true;

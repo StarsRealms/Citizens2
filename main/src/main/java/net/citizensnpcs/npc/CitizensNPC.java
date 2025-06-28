@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Registry;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -17,7 +18,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import com.google.common.base.Throwables;
@@ -112,8 +112,6 @@ public class CitizensNPC extends AbstractNPC {
         if (getEntity() instanceof SkinnableEntity) {
             ((SkinnableEntity) getEntity()).getSkinTracker().onRemoveNPC();
         }
-        getEntity().removeMetadata("NPC", CitizensAPI.getPlugin());
-        getEntity().removeMetadata("NPC-ID", CitizensAPI.getPlugin());
         if (reason == DespawnReason.DEATH) {
             entityController.die();
         } else {
@@ -296,12 +294,7 @@ public class CitizensNPC extends AbstractNPC {
     }
 
     @Override
-    public boolean spawn(Location at) {
-        return spawn(at, SpawnReason.PLUGIN);
-    }
-
-    @Override
-    public boolean spawn(Location at, SpawnReason reason) {
+    public boolean spawn(Location at, SpawnReason reason, Consumer<Entity> callback) {
         Objects.requireNonNull(at, "location cannot be null");
         Objects.requireNonNull(reason, "reason cannot be null");
         if (getEntity() != null) {
@@ -319,8 +312,6 @@ public class CitizensNPC extends AbstractNPC {
         }
         getOrAddTrait(CurrentLocation.class).setLocation(at);
         entityController.create(at.clone(), this);
-        getEntity().setMetadata("NPC", new FixedMetadataValue(CitizensAPI.getPlugin(), true));
-        getEntity().setMetadata("NPC-ID", new FixedMetadataValue(CitizensAPI.getPlugin(), getId()));
 
         if (getEntity() instanceof SkinnableEntity && !hasTrait(SkinLayers.class)) {
             ((SkinnableEntity) getEntity()).setSkinFlags(EnumSet.allOf(SkinLayers.Layer.class));
@@ -409,8 +400,13 @@ public class CitizensNPC extends AbstractNPC {
                     }
                     if (type == EntityType.PLAYER) {
                         PlayerUpdateTask.registerPlayer(getEntity());
-                    } else if (data().has(NPC.Metadata.AGGRESSIVE)) {
-                        NMS.setAggressive(entity, data().<Boolean> get(NPC.Metadata.AGGRESSIVE));
+                        if (SUPPORT_ATTRIBUTES
+                                && Util.getRegistryValue(Registry.ATTRIBUTE, "waypoint_transmit_range") != null) {
+                            AttributeTrait attr = getOrAddTrait(AttributeTrait.class);
+                            if (!attr.hasAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE)) {
+                                attr.setAttributeValue(Attribute.WAYPOINT_TRANSMIT_RANGE, 0);
+                            }
+                        }
                     }
                     entity.setNoDamageTicks(data().get(NPC.Metadata.SPAWN_NODAMAGE_TICKS,
                             Setting.DEFAULT_SPAWN_NODAMAGE_DURATION.asTicks()));
@@ -424,6 +420,9 @@ public class CitizensNPC extends AbstractNPC {
 
                 Messaging.debug("Spawned", CitizensNPC.this, "SpawnReason." + reason);
                 cancel.run();
+                if (callback != null) {
+                    callback.accept(getEntity());
+                }
             }
         };
         if (getEntity() != null && getEntity().isValid()) {
@@ -510,6 +509,9 @@ public class CitizensNPC extends AbstractNPC {
             }
             if (SUPPORT_SILENT && data().has(NPC.Metadata.SILENT)) {
                 getEntity().setSilent(Boolean.parseBoolean(data().get(NPC.Metadata.SILENT).toString()));
+            }
+            if (data().has(NPC.Metadata.AGGRESSIVE)) {
+                NMS.setAggressive(getEntity(), data().<Boolean> get(NPC.Metadata.AGGRESSIVE));
             }
             boolean isLiving = getEntity() instanceof LivingEntity;
             if (isUpdating(NPCUpdate.PACKET)) {
@@ -598,13 +600,17 @@ public class CitizensNPC extends AbstractNPC {
         if (!SUPPORT_USE_ITEM)
             return;
 
+        if (data().has("citizens-was-using-item")) {
+            PlayerAnimation.STOP_USE_ITEM.play(player, 64);
+            data().remove("citizens-was-using-item");
+        }
         try {
             if (useItem) {
-                PlayerAnimation.STOP_USE_ITEM.play(player, 64);
                 PlayerAnimation.START_USE_MAINHAND_ITEM.play(player, 64);
+                data().set("citizens-was-using-item", true);
             } else if (offhand) {
-                PlayerAnimation.STOP_USE_ITEM.play(player, 64);
                 PlayerAnimation.START_USE_OFFHAND_ITEM.play(player, 64);
+                data().set("citizens-was-using-item", true);
             }
         } catch (UnsupportedOperationException ex) {
             SUPPORT_USE_ITEM = false;
