@@ -1,34 +1,11 @@
 package net.citizensnpcs;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
-
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.command.BlockCommandSender;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.RegisteredServiceProvider;
-import org.bukkit.plugin.java.JavaPlugin;
-
+import ch.ethz.globis.phtree.PhTreeHelper;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.mojang.authlib.GameProfile;
-
-import ch.ethz.globis.phtree.PhTreeHelper;
 import net.byteflux.libby.BukkitLibraryManager;
 import net.byteflux.libby.Library;
 import net.byteflux.libby.LibraryManager;
@@ -46,27 +23,13 @@ import net.citizensnpcs.api.event.CitizensPreReloadEvent;
 import net.citizensnpcs.api.event.CitizensReloadEvent;
 import net.citizensnpcs.api.event.DespawnReason;
 import net.citizensnpcs.api.exception.NPCLoadException;
-import net.citizensnpcs.api.npc.MemoryNPCDataStore;
-import net.citizensnpcs.api.npc.NPC;
-import net.citizensnpcs.api.npc.NPCDataStore;
-import net.citizensnpcs.api.npc.NPCRegistry;
-import net.citizensnpcs.api.npc.SimpleNPCDataStore;
+import net.citizensnpcs.api.npc.*;
 import net.citizensnpcs.api.npc.templates.TemplateRegistry;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.api.trait.TraitFactory;
-import net.citizensnpcs.api.util.Messaging;
-import net.citizensnpcs.api.util.Placeholders;
-import net.citizensnpcs.api.util.SpigotUtil;
+import net.citizensnpcs.api.util.*;
 import net.citizensnpcs.api.util.SpigotUtil.InventoryViewAPI;
-import net.citizensnpcs.api.util.Storage;
-import net.citizensnpcs.api.util.Translator;
-import net.citizensnpcs.api.util.YamlStorage;
-import net.citizensnpcs.commands.AdminCommands;
-import net.citizensnpcs.commands.EditorCommands;
-import net.citizensnpcs.commands.NPCCommands;
-import net.citizensnpcs.commands.TemplateCommands;
-import net.citizensnpcs.commands.TraitCommands;
-import net.citizensnpcs.commands.WaypointCommands;
+import net.citizensnpcs.commands.*;
 import net.citizensnpcs.editor.Editor;
 import net.citizensnpcs.npc.CitizensNPCRegistry;
 import net.citizensnpcs.npc.CitizensTraitFactory;
@@ -74,12 +37,24 @@ import net.citizensnpcs.npc.NPCSelector;
 import net.citizensnpcs.npc.skin.Skin;
 import net.citizensnpcs.npc.skin.profile.ProfileFetcher;
 import net.citizensnpcs.trait.shop.StoredShops;
-import net.citizensnpcs.util.Messages;
-import net.citizensnpcs.util.NMS;
-import net.citizensnpcs.util.PlayerUpdateTask;
-import net.citizensnpcs.util.SkinProperty;
-import net.citizensnpcs.util.Util;
+import net.citizensnpcs.util.*;
 import net.milkbowl.vault.economy.Economy;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.command.BlockCommandSender;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.File;
+import java.util.*;
 
 public class Citizens extends JavaPlugin implements CitizensPlugin {
     private final List<NPCRegistry> anonymousRegistries = Lists.newArrayList();
@@ -418,7 +393,7 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         registerCommands();
         NMS.load(commands);
         Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
-        commands.registerTabCompletion(this);
+//        commands.registerTabCompletion(this);
         commands.setTranslationPrefixProvider(cmd -> "citizens.commands." + cmd.aliases()[0]
                 + (cmd.modifiers().length > 0 && !cmd.modifiers()[0].isEmpty() ? "." + cmd.modifiers()[0] : ""));
 

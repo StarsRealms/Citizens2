@@ -13,9 +13,7 @@ dependencies {
 }
 
 tasks.shadowJar {
-    minimize()
     archiveClassifier.set("")
-
     relocate("net.kyori", "clib.net.kyori")
     relocate("net.byteflux.libby", "clib.net.byteflux.libby")
 }
