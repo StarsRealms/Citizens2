@@ -1,14 +1,29 @@
 name: Citizens
 authors: [fullwall]
-softdepend: [Vault, PlaceholderAPI, WorldGuard, ProtocolLib]
 version: ${project.version} (build ${BUILD_NUMBER})
 main: net.citizensnpcs.Citizens
 website: https://www.citizensnpcs.co
-api-version: "1.13"
-libraries:
-  - ch.ethz.globis.phtree:phtree:2.8.2
-  - org.joml:joml:1.10.8
-  - it.unimi.dsi:fastutil:8.5.15
+api-version: "1.21"
+loader: net.citizensnpcs.LibLoader
+dependencies:
+  server:
+    Vault:
+      required: false
+      load: BEFORE
+      join-classpath: true
+    PlaceholderAPI:
+      required: false
+      load: BEFORE
+      join-classpath: true
+    WorldGuard:
+      required: false
+      load: BEFORE
+      join-classpath: true
+    ProtocolLib:
+      required: false
+      load: BEFORE
+      join-classpath: true
+
 commands:
   trait: 
     description: Trait commands
