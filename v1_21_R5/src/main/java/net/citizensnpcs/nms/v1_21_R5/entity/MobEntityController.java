@@ -1,14 +1,5 @@
 package net.citizensnpcs.nms.v1_21_R5.entity;
 
-import java.lang.reflect.Constructor;
-import java.util.Map;
-import java.util.WeakHashMap;
-
-import org.bukkit.Location;
-import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.v1_21_R5.CraftWorld;
-import org.bukkit.entity.Entity;
-
 import net.citizensnpcs.Settings.Setting;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_21_R5.util.NMSImpl;
@@ -20,6 +11,14 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.control.LookControl;
 import net.minecraft.world.level.Level;
+import org.bukkit.Location;
+import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.entity.Entity;
+
+import java.lang.reflect.Constructor;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 public abstract class MobEntityController extends AbstractEntityController {
     private final Class<?> clazz;

@@ -12,3 +12,7 @@ dependency-reduced-pom.xml
 *.jardesc
 *.lnk
 *.bbmodel
+/.run/
+/buildSrc/.kotlin/
+**/.gradle/
+**/build/

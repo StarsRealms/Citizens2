@@ -1,26 +1,6 @@
 package net.citizensnpcs.nms.v1_21_R5.entity;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandle;
-import java.util.List;
-
-import net.citizensnpcs.trait.CustomEntityTrait;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.*;
-import net.minecraft.world.entity.EntityType;
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftPlayer;
-import org.bukkit.entity.Player;
-import org.bukkit.metadata.MetadataValue;
-import org.bukkit.plugin.Plugin;
-
 import com.mojang.authlib.GameProfile;
-
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPC.NPCUpdate;
@@ -47,9 +27,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.PlainTextContents.LiteralContents;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerAdvancements;
+import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.stats.ServerStatsCounter;
@@ -62,6 +45,16 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.Player;
+import org.bukkit.metadata.MetadataValue;
+import org.bukkit.plugin.Plugin;
+
+import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.util.List;
 
 public class EntityHumanNPC extends ServerPlayer implements NPCHolder, SkinnableEntity, ForwardingMobAI {
     private PlayerAdvancements advancements;
@@ -216,12 +209,12 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
     }
 
     @Override
-    protected SoundEvent getDeathSound() {
+    public SoundEvent getDeathSound() {
         return NMSImpl.getSoundEffect(npc, super.getDeathSound(), NPC.Metadata.DEATH_SOUND);
     }
 
     @Override
-    protected SoundEvent getHurtSound(DamageSource damagesource) {
+    public SoundEvent getHurtSound(DamageSource damagesource) {
         return NMSImpl.getSoundEffect(npc, super.getHurtSound(damagesource), NPC.Metadata.HURT_SOUND);
     }
 
@@ -407,7 +400,7 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
                 e.printStackTrace();
             }
         } else {
-            detectEquipmentUpdatesPublic();
+            detectEquipmentUpdates();
         }
         onEffectsRemoved(List.of()); // calls refreshDirtyAttributes
         Bukkit.getServer().getPluginManager().unsubscribeFromPermission("bukkit.broadcast.user", getBukkitEntity());

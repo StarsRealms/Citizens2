@@ -1,7 +1,5 @@
 package net.citizensnpcs.nms.v1_21_R5.util;
 
-import org.bukkit.craftbukkit.v1_21_R5.inventory.CraftItemStack;
-
 import net.citizensnpcs.util.AbstractBlockBreaker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -13,6 +11,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 
 public class CitizensBlockBreaker extends AbstractBlockBreaker {
     public CitizensBlockBreaker(org.bukkit.entity.Entity entity, org.bukkit.block.Block target,

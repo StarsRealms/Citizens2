@@ -1,21 +1,5 @@
 package net.citizensnpcs.nms.v1_21_R5.entity.nonliving;
 
-import java.util.function.Supplier;
-
-import net.citizensnpcs.trait.CustomEntityTrait;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerEntity;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R5.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftChestBoat;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftEntity;
-
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.trait.trait.MobType;
 import net.citizensnpcs.nms.v1_21_R5.util.ForwardingNPCHolder;
@@ -27,6 +11,9 @@ import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.Util;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
@@ -45,6 +32,14 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftChestBoat;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+
+import java.util.function.Supplier;
 
 public class ChestBoatController extends AbstractEntityController {
     @Override
@@ -153,7 +148,7 @@ public class ChestBoatController extends AbstractEntityController {
             return Util.callPistonPushEvent(npc) ? PushReaction.IGNORE : super.getPistonPushReaction();
         }
 
-        private Status getStatus() {
+        public Status getStatus() {
             Status entityboat_Status = u();
             if (entityboat_Status != null) {
                 this.aC = getBoundingBox().maxY;

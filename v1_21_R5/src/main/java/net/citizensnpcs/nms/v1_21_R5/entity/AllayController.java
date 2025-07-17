@@ -1,20 +1,7 @@
 package net.citizensnpcs.nms.v1_21_R5.entity;
 
-import net.citizensnpcs.trait.CustomEntityTrait;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerEntity;
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftAllay;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftEntity;
-
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Pair;
-
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_21_R5.util.ForwardingNPCHolder;
@@ -24,7 +11,10 @@ import net.citizensnpcs.npc.CitizensNPC;
 import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.Util;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -46,6 +36,10 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftAllay;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 
 public class AllayController extends MobEntityController {
     public AllayController() {
@@ -114,7 +108,7 @@ public class AllayController extends MobEntityController {
         }
 
         @Override
-        protected SoundEvent getAmbientSound() {
+        public SoundEvent getAmbientSound() {
             return NMSImpl.getSoundEffect(npc, super.getAmbientSound(), NPC.Metadata.AMBIENT_SOUND);
         }
 
@@ -127,12 +121,12 @@ public class AllayController extends MobEntityController {
         }
 
         @Override
-        protected SoundEvent getDeathSound() {
+        public SoundEvent getDeathSound() {
             return NMSImpl.getSoundEffect(npc, super.getDeathSound(), NPC.Metadata.DEATH_SOUND);
         }
 
         @Override
-        protected SoundEvent getHurtSound(DamageSource damagesource) {
+        public SoundEvent getHurtSound(DamageSource damagesource) {
             return NMSImpl.getSoundEffect(npc, super.getHurtSound(damagesource), NPC.Metadata.HURT_SOUND);
         }
 

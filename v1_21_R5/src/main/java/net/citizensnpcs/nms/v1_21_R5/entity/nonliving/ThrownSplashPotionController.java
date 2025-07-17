@@ -8,9 +8,8 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerEntity;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftSplashPotion;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_21_R5.entity.MobEntityController;
@@ -32,6 +31,7 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.craftbukkit.entity.CraftThrownSplashPotion;
 
 public class ThrownSplashPotionController extends MobEntityController {
     public ThrownSplashPotionController() {
@@ -142,7 +142,7 @@ public class ThrownSplashPotionController extends MobEntityController {
         }
     }
 
-    public static class SplashThrownPotionNPC extends CraftSplashPotion implements NPCHolder {
+    public static class SplashThrownPotionNPC extends CraftThrownSplashPotion implements NPCHolder {
         private final CitizensNPC npc;
 
         public SplashThrownPotionNPC(EntityThrownSplashPotionNPC entity) {

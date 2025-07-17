@@ -8,9 +8,9 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerEntity;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftThrownExpBottle;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftThrownExpBottle;
 import org.bukkit.entity.ThrownExpBottle;
 
 import net.citizensnpcs.api.npc.NPC;

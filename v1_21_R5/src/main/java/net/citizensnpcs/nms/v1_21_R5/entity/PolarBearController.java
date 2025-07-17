@@ -1,17 +1,5 @@
 package net.citizensnpcs.nms.v1_21_R5.entity;
 
-import net.citizensnpcs.trait.CustomEntityTrait;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerEntity;
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftPolarBear;
-
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_21_R5.util.ForwardingNPCHolder;
 import net.citizensnpcs.nms.v1_21_R5.util.NMSBoundingBox;
@@ -20,7 +8,10 @@ import net.citizensnpcs.npc.CitizensNPC;
 import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.Util;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -38,6 +29,10 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftPolarBear;
 
 public class PolarBearController extends MobEntityController {
     public PolarBearController() {
@@ -99,7 +94,7 @@ public class PolarBearController extends MobEntityController {
         }
 
         @Override
-        protected SoundEvent getAmbientSound() {
+        public SoundEvent getAmbientSound() {
             return NMSImpl.getSoundEffect(npc, super.getAmbientSound(), NPC.Metadata.AMBIENT_SOUND);
         }
 
@@ -112,12 +107,12 @@ public class PolarBearController extends MobEntityController {
         }
 
         @Override
-        protected SoundEvent getDeathSound() {
+        public SoundEvent getDeathSound() {
             return NMSImpl.getSoundEffect(npc, super.getDeathSound(), NPC.Metadata.DEATH_SOUND);
         }
 
         @Override
-        protected SoundEvent getHurtSound(DamageSource damagesource) {
+        public SoundEvent getHurtSound(DamageSource damagesource) {
             return NMSImpl.getSoundEffect(npc, super.getHurtSound(damagesource), NPC.Metadata.HURT_SOUND);
         }
 

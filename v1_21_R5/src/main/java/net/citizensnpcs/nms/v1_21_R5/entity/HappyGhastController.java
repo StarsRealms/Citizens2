@@ -1,10 +1,5 @@
 package net.citizensnpcs.nms.v1_21_R5.entity;
 
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftHappyGhast;
-
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_21_R5.util.ForwardingNPCHolder;
 import net.citizensnpcs.nms.v1_21_R5.util.NMSBoundingBox;
@@ -30,6 +25,10 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftHappyGhast;
 
 public class HappyGhastController extends MobEntityController {
     public HappyGhastController() {
@@ -82,7 +81,7 @@ public class HappyGhastController extends MobEntityController {
         }
 
         @Override
-        protected SoundEvent getAmbientSound() {
+        public SoundEvent getAmbientSound() {
             return NMSImpl.getSoundEffect(npc, super.getAmbientSound(), NPC.Metadata.AMBIENT_SOUND);
         }
 
@@ -95,12 +94,12 @@ public class HappyGhastController extends MobEntityController {
         }
 
         @Override
-        protected SoundEvent getDeathSound() {
+        public SoundEvent getDeathSound() {
             return NMSImpl.getSoundEffect(npc, super.getDeathSound(), NPC.Metadata.DEATH_SOUND);
         }
 
         @Override
-        protected SoundEvent getHurtSound(DamageSource damagesource) {
+        public SoundEvent getHurtSound(DamageSource damagesource) {
             return NMSImpl.getSoundEffect(npc, super.getHurtSound(damagesource), NPC.Metadata.HURT_SOUND);
         }
 

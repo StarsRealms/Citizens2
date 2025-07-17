@@ -1,15 +1,6 @@
 package net.citizensnpcs.nms.v1_21_R5.entity;
 
-import java.util.UUID;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_21_R5.CraftWorld;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
-
 import com.mojang.authlib.GameProfile;
-
 import net.citizensnpcs.Settings.Setting;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
@@ -22,6 +13,13 @@ import net.citizensnpcs.util.Util;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+
+import java.util.UUID;
 
 public class HumanController extends AbstractEntityController {
     public HumanController() {

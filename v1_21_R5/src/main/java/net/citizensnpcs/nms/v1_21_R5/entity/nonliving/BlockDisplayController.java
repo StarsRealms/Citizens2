@@ -1,19 +1,5 @@
 package net.citizensnpcs.nms.v1_21_R5.entity.nonliving;
 
-import net.citizensnpcs.trait.CustomEntityTrait;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerEntity;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R5.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftBlockDisplay;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftEntity;
-
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_21_R5.entity.MobEntityController;
 import net.citizensnpcs.nms.v1_21_R5.util.ForwardingNPCHolder;
@@ -23,6 +9,9 @@ import net.citizensnpcs.npc.CitizensNPC;
 import net.citizensnpcs.npc.ai.NPCHolder;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.Util;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Display.BlockDisplay;
@@ -35,6 +24,12 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftBlockDisplay;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 
 public class BlockDisplayController extends MobEntityController {
     public BlockDisplayController() {

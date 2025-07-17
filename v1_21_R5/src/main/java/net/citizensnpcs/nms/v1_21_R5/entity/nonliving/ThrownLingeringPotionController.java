@@ -1,9 +1,8 @@
 package net.citizensnpcs.nms.v1_21_R5.entity.nonliving;
 
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_21_R5.entity.CraftLingeringPotion;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.nms.v1_21_R5.entity.MobEntityController;
@@ -25,6 +24,7 @@ import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.craftbukkit.entity.CraftThrownLingeringPotion;
 
 public class ThrownLingeringPotionController extends MobEntityController {
     public ThrownLingeringPotionController() {
@@ -126,7 +126,7 @@ public class ThrownLingeringPotionController extends MobEntityController {
         }
     }
 
-    public static class LingeringThrownPotionNPC extends CraftLingeringPotion implements NPCHolder {
+    public static class LingeringThrownPotionNPC extends CraftThrownLingeringPotion implements NPCHolder {
         private final CitizensNPC npc;
 
         public LingeringThrownPotionNPC(EntityThrownLingeringPotionNPC entity) {
