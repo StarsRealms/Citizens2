@@ -79,6 +79,11 @@ public class CreakingController extends MobEntityController {
         }
 
         @Override
+        public boolean canMove() {
+            return npc == null || npc.useMinecraftAI() ? super.canMove() : true;
+        }
+
+        @Override
         protected boolean canRide(Entity entity) {
             if (npc != null && (entity instanceof Boat || entity instanceof AbstractMinecart))
                 return !npc.isProtected();
@@ -90,6 +95,11 @@ public class CreakingController extends MobEntityController {
             if (npc == null || !npc.isFlyable())
                 return super.causeFallDamage(f, f1, damagesource);
             return false;
+        }
+
+        @Override
+        public boolean checkCanMove() {
+            return npc == null || npc.useMinecraftAI() ? super.canMove() : true;
         }
 
         @Override

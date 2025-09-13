@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -258,7 +257,7 @@ import net.citizensnpcs.trait.versioned.VexTrait;
 import net.citizensnpcs.trait.versioned.VillagerTrait;
 import net.citizensnpcs.trait.versioned.WardenTrait;
 import net.citizensnpcs.util.EntityPacketTracker;
-import net.citizensnpcs.util.EntityPacketTracker.PacketAggregator;
+import net.citizensnpcs.util.EntityPacketTracker.PacketBundler;
 import net.citizensnpcs.util.Messages;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.NMS.MinecraftNavigationType;
@@ -287,6 +286,7 @@ import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
+import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
@@ -522,7 +522,7 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
-    public EntityPacketTracker createPacketTracker(org.bukkit.entity.Entity entity, PacketAggregator agg) {
+    public EntityPacketTracker createPacketTracker(org.bukkit.entity.Entity entity, PacketBundler agg) {
         Entity handle = getHandle(entity);
         Set<ServerPlayerConnection> linked = Sets.newIdentityHashSet();
         ServerEntity tracker = new ServerEntity((ServerLevel) handle.level(), handle, handle.getType().updateInterval(),
@@ -715,6 +715,17 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
+    public float getMovementSpeed(org.bukkit.entity.Entity entity) {
+        if (entity == null || !(entity instanceof org.bukkit.entity.LivingEntity))
+            return DEFAULT_SPEED;
+        LivingEntity handle = getHandle((org.bukkit.entity.LivingEntity) entity);
+        if (handle == null) {
+            return DEFAULT_SPEED;
+        }
+        return (float) handle.getAttributeBaseValue(Attributes.MOVEMENT_SPEED);
+    }
+
+    @Override
     public EntityPacketTracker getPacketTracker(org.bukkit.entity.Entity entity) {
         ServerLevel server = (ServerLevel) getHandle(entity).level();
         TrackedEntity entry = server.getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
@@ -792,17 +803,6 @@ public class NMSImpl implements NMSBridge {
     public org.bukkit.entity.Entity getSource(BlockCommandSender sender) {
         Entity source = ((CraftBlockCommandSender) sender).getWrapper().getEntity();
         return source != null ? source.getBukkitEntity() : null;
-    }
-
-    @Override
-    public float getSpeedFor(NPC npc) {
-        if (!npc.isSpawned() || !(npc.getEntity() instanceof org.bukkit.entity.LivingEntity))
-            return DEFAULT_SPEED;
-        LivingEntity handle = getHandle((org.bukkit.entity.LivingEntity) npc.getEntity());
-        if (handle == null) {
-            return DEFAULT_SPEED;
-        }
-        return (float) handle.getAttributeBaseValue(Attributes.MOVEMENT_SPEED);
     }
 
     @Override
@@ -1445,8 +1445,18 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
-    public void sendPositionUpdate(org.bukkit.entity.Entity from, Collection<Player> to, boolean position,
-            Float bodyYaw, Float pitch, Float headYaw) {
+    public void sendCameraPacket(Player player, org.bukkit.entity.Entity entity) {
+        sendPacket(player, new ClientboundSetCameraPacket(getHandle(entity)));
+    }
+
+    @Override
+    public void sendComponent(Player player, Object component) {
+        getHandle(player).sendSystemMessage((Component) component);
+    }
+
+    @Override
+    public void sendPositionUpdate(org.bukkit.entity.Entity from, Iterable<Player> to, boolean position, Float bodyYaw,
+            Float pitch, Float headYaw) {
         List<Packet<?>> toSend = getPositionUpdate(from, position, bodyYaw, pitch, headYaw);
         for (Player dest : to) {
             sendPackets(dest, toSend);
@@ -2688,17 +2698,24 @@ public class NMSImpl implements NMSBridge {
             return;
         if (npc.useMinecraftAI()) {
             restoreGoals(npc, entity.goalSelector, entity.targetSelector);
-            if (npc.data().has("behavior-map")) {
-                Map behavior = npc.data().get("behavior-map");
-                getBehaviorMap(entity).putAll(behavior);
-                npc.data().remove("behavior-map");
+            if (npc.data().has("brain")) {
+                try {
+                    BRAIN_SETTER.invoke(entity, npc.data().get("brain"));
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+                npc.data().remove("brain");
             }
         } else {
             clearGoals(npc, entity.goalSelector, entity.targetSelector);
             Map behaviorMap = getBehaviorMap(entity);
-            if (behaviorMap.size() > 0) {
-                npc.data().set("behavior-map", new HashMap(behaviorMap));
-                behaviorMap.clear();
+            if (!npc.data().has("brain") || behaviorMap.size() > 0) {
+                npc.data().set("brain", entity.getBrain());
+                try {
+                    BRAIN_SETTER.invoke(entity, entity.getBrain().copyWithoutBehaviors());
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -2714,6 +2731,7 @@ public class NMSImpl implements NMSBridge {
             EntityType.SILVERFISH, EntityType.SHULKER, EntityType.ENDERMITE, EntityType.ENDER_DRAGON, EntityType.BAT,
             EntityType.SLIME, EntityType.DOLPHIN, EntityType.MAGMA_CUBE, EntityType.HORSE, EntityType.GHAST,
             EntityType.SHULKER, EntityType.PHANTOM);
+    private static final MethodHandle BRAIN_SETTER = NMS.getFirstSetter(LivingEntity.class, Brain.class);
     private static final MethodHandle BUKKITENTITY_FIELD_SETTER = NMS.getSetter(Entity.class, "bukkitEntity");
     private static final MethodHandle CHUNKMAP_UPDATE_PLAYER_STATUS = NMS.getMethodHandle(ChunkMap.class, "a", true,
             ServerPlayer.class, boolean.class);

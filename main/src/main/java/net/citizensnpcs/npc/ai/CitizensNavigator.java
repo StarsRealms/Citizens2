@@ -42,12 +42,14 @@ import net.citizensnpcs.api.util.DataKey;
 import net.citizensnpcs.api.util.Messaging;
 import net.citizensnpcs.api.util.SpigotUtil;
 import net.citizensnpcs.npc.ai.AStarNavigationStrategy.AStarPlanner;
+import net.citizensnpcs.trait.ChunkTicketTrait;
 import net.citizensnpcs.trait.RotationTrait;
 import net.citizensnpcs.trait.RotationTrait.PacketRotationSession;
+import net.citizensnpcs.util.ChunkCoord;
 import net.citizensnpcs.util.NMS;
 
 public class CitizensNavigator implements Navigator, Runnable {
-    private Location activeTicket;
+    private ChunkCoord activeTicket;
     private final NavigatorParameters defaultParams = new NavigatorParameters().baseSpeed(UNINITIALISED_SPEED)
             .range(Setting.DEFAULT_PATHFINDING_RANGE.asFloat()).debug(Setting.DEBUG_PATHFINDING.asBoolean())
             .defaultAttackStrategy((attacker, target) -> {
@@ -97,12 +99,12 @@ public class CitizensNavigator implements Navigator, Runnable {
 
     @Override
     public boolean canNavigateTo(Location dest, NavigatorParameters params) {
-        if (defaultParams.pathfinderType() == PathfinderType.CITIZENS || !(npc.getEntity() instanceof LivingEntity)) {
+        if (defaultParams.pathfinderType().isCitizens() || !(npc.getEntity() instanceof LivingEntity)) {
             if (npc.isFlyable()) {
                 params.examiner(new FlyingBlockExaminer());
             }
             AStarPlanner planner = new AStarPlanner(params, npc.getStoredLocation(), dest);
-            planner.tick(Setting.MAXIMUM_ASTAR_ITERATIONS.asInt(), Setting.MAXIMUM_ASTAR_ITERATIONS.asInt());
+            planner.tick();
             return planner.plan != null;
         } else {
             return NMS.canNavigateTo(npc.getEntity(), dest, params);
@@ -121,9 +123,7 @@ public class CitizensNavigator implements Navigator, Runnable {
 
     @Override
     public NavigatorParameters getLocalParameters() {
-        if (!isNavigating())
-            return defaultParams;
-        return localParams;
+        return isNavigating() ? localParams : defaultParams;
     }
 
     @Override
@@ -190,9 +190,7 @@ public class CitizensNavigator implements Navigator, Runnable {
     }
 
     public void onSpawn() {
-        if (defaultParams.baseSpeed() == UNINITIALISED_SPEED) {
-            defaultParams.baseSpeed(NMS.getSpeedFor(npc));
-        }
+        defaultParams.baseSpeed(NMS.getMovementSpeed(npc.getEntity()));
         updatePathfindingRange();
     }
 
@@ -344,15 +342,15 @@ public class CitizensNavigator implements Navigator, Runnable {
         }
         localParams = defaultParams.clone();
 
-        if (localParams.pathfinderType() == PathfinderType.CITIZENS) {
-            int fallDistance = localParams.fallDistance();
-            if (fallDistance != -1) {
-                localParams.examiner(new FallingExaminer(fallDistance));
+        if (localParams.pathfinderType().isCitizens()) {
+            if (localParams.fallDistance() != -1) {
+                localParams.examiner(new FallingExaminer(localParams.fallDistance()));
             }
-            if (npc.data().get(NPC.Metadata.PATHFINDER_OPEN_DOORS, Setting.NEW_PATHFINDER_OPENS_DOORS.asBoolean())) {
+            if (npc.data().get(NPC.Metadata.PATHFINDER_OPEN_DOORS,
+                    Setting.CITIZENS_PATHFINDER_OPENS_DOORS.asBoolean())) {
                 localParams.examiner(new DoorExaminer());
             }
-            if (Setting.NEW_PATHFINDER_CHECK_BOUNDING_BOXES.asBoolean()) {
+            if (Setting.CITIZENS_PATHFINDER_CHECK_BOUNDING_BOXES.asBoolean()) {
                 localParams.examiner(new BoundingBoxExaminer(npc.getEntity()));
             }
         }
@@ -361,6 +359,7 @@ public class CitizensNavigator implements Navigator, Runnable {
         stationaryTicks = 0;
         if (npc.isSpawned()) {
             NMS.updateNavigationWorld(npc.getEntity(), npc.getEntity().getWorld());
+            npc.getOrAddTrait(ChunkTicketTrait.class);
             updateTicket(executing.getTargetAsLocation());
         }
         Bukkit.getPluginManager().callEvent(new NavigationBeginEvent(this));
@@ -377,8 +376,7 @@ public class CitizensNavigator implements Navigator, Runnable {
         setTarget(params -> {
             if (npc.isFlyable()) {
                 return new FlyingAStarNavigationStrategy(npc, path, params);
-            } else if (params.pathfinderType() == PathfinderType.CITIZENS
-                    || !(npc.getEntity() instanceof LivingEntity)) {
+            } else if (params.pathfinderType().isCitizens() || !(npc.getEntity() instanceof LivingEntity)) {
                 return new AStarNavigationStrategy(npc, path, params);
             } else {
                 return new MCNavigationStrategy(npc, path, params);
@@ -398,8 +396,7 @@ public class CitizensNavigator implements Navigator, Runnable {
         setTarget(params -> {
             if (npc.isFlyable()) {
                 return new FlyingAStarNavigationStrategy(npc, target, params);
-            } else if (params.pathfinderType() == PathfinderType.CITIZENS
-                    || !(npc.getEntity() instanceof LivingEntity)) {
+            } else if (params.pathfinderType().isCitizens() || !(npc.getEntity() instanceof LivingEntity)) {
                 return new AStarNavigationStrategy(npc, target, params);
             } else {
                 return new MCNavigationStrategy(npc, target, params);
@@ -424,8 +421,7 @@ public class CitizensNavigator implements Navigator, Runnable {
         if (!SUPPORT_CHUNK_TICKETS || !CitizensAPI.hasImplementation() || !CitizensAPI.getPlugin().isEnabled())
             return;
 
-        Bukkit.getScheduler().scheduleSyncDelayedTask(CitizensAPI.getPlugin(),
-                () -> updateTicket(isNavigating() ? executing.getTargetAsLocation() : null), 10);
+        updateTicket(null);
 
         // Location loc = npc.getEntity().getLocation(STATIONARY_LOCATION);
         // NMS.look(npc.getEntity(), loc.getYaw(), 0);
@@ -532,10 +528,8 @@ public class CitizensNavigator implements Navigator, Runnable {
         if (!SUPPORT_CHUNK_TICKETS || !CitizensAPI.hasImplementation() || !CitizensAPI.getPlugin().isEnabled())
             return;
 
-        // already have a ticket on same chunk
-        if (target != null && activeTicket != null && target.getBlockX() >> 4 == activeTicket.getBlockX() >> 4
-                && target.getBlockZ() >> 4 == activeTicket.getBlockZ() >> 4
-                && target.getWorld().equals(activeTicket.getWorld()))
+        ChunkCoord coord = null;
+        if (target != null && (coord = new ChunkCoord(target)).equals(activeTicket))
             return;
 
         // switch ticket to the new chunk
@@ -546,12 +540,12 @@ public class CitizensNavigator implements Navigator, Runnable {
             activeTicket = null;
             return;
         }
-        activeTicket = target.clone();
+        activeTicket = coord;
         activeTicket.getChunk().addPluginChunkTicket(CitizensAPI.getPlugin());
     }
 
     private static boolean SUPPORT_CHUNK_TICKETS = true;
-    private static final int UNINITIALISED_SPEED = Integer.MIN_VALUE;
+    private static final float UNINITIALISED_SPEED = 0.3f;
     static {
         try {
             Chunk.class.getMethod("removePluginChunkTicket", Plugin.class);

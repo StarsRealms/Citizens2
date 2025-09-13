@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.Vector;
 import java.util.stream.Collectors;
 
 import net.citizensnpcs.trait.*;
@@ -54,6 +53,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -163,7 +163,6 @@ import net.citizensnpcs.trait.WitherTrait;
 import net.citizensnpcs.trait.WolfModifiers;
 import net.citizensnpcs.trait.shop.StoredShops;
 import net.citizensnpcs.trait.waypoint.WanderWaypointProvider;
-import net.citizensnpcs.trait.waypoint.WaypointProvider;
 import net.citizensnpcs.trait.waypoint.Waypoints;
 import net.citizensnpcs.util.Anchor;
 import net.citizensnpcs.util.Messages;
@@ -549,7 +548,7 @@ public class NPCCommands {
             @Arg(
                     value = 1,
                     completions = { "add", "execute", "remove", "permissions", "persistsequence", "sequential", "cycle",
-                            "random", "forgetplayer", "hideerrors", "errormsg", "clearerror", "expcost", "itemcost",
+                            "random", "forgetplayer", "hideerrors", "errormessage", "clearerror", "expcost", "itemcost",
                             "cost" }) String action)
             throws CommandException {
         CommandTrait commands = npc.getOrAddTrait(CommandTrait.class);
@@ -653,14 +652,14 @@ public class NPCCommands {
                     commands.getExecutionMode() == ExecutionMode.CYCLE ? ExecutionMode.LINEAR : ExecutionMode.CYCLE);
             Messaging.sendTr(sender, commands.getExecutionMode() == ExecutionMode.CYCLE ? Messages.COMMANDS_CYCLE_SET
                     : Messages.COMMANDS_CYCLE_UNSET);
-        } else if (action.equalsIgnoreCase("persistsequence")) {
+        } else if (action.equalsIgnoreCase("rememberlastused")) {
             if (args.argsLength() == 2) {
-                commands.setPersistSequence(!commands.persistSequence());
+                commands.setRememberLastUsed(!commands.rememberLastUsed());
             } else {
-                commands.setPersistSequence(Boolean.parseBoolean(args.getString(3)));
+                commands.setRememberLastUsed(Boolean.parseBoolean(args.getString(3)));
             }
-            Messaging.sendTr(sender, commands.persistSequence() ? Messages.COMMANDS_PERSIST_SEQUENCE_SET
-                    : Messages.COMMANDS_PERSIST_SEQUENCE_UNSET);
+            Messaging.sendTr(sender, commands.rememberLastUsed() ? Messages.COMMANDS_REMEMBER_LAST_USED_SET
+                    : Messages.COMMANDS_REMEMBER_LAST_USED_UNSET);
         } else if (action.equalsIgnoreCase("remove")) {
             if (args.argsLength() == 2)
                 throw new CommandUsageException();
@@ -713,7 +712,7 @@ public class NPCCommands {
                 InventoryMenu.createSelfRegistered(new ItemRequirementGUI(commands, args.getInteger(2)))
                         .present((Player) sender);
             }
-        } else if (action.equalsIgnoreCase("errormsg")) {
+        } else if (action.equalsIgnoreCase("errormessage")) {
             CommandTraitError which = Util.matchEnum(CommandTraitError.values(), args.getString(2));
             if (which == null)
                 throw new CommandException(Messages.NPC_COMMAND_INVALID_ERROR_MESSAGE,
@@ -1294,14 +1293,14 @@ public class NPCCommands {
 
     @Command(
             aliases = { "npc" },
-            usage = "hitbox --scale [scale] --width/height [value]",
+            usage = "hitbox --scale [scale] --width/height [value] --offset [x,y,z]",
             desc = "",
             modifiers = { "hitbox" },
             min = 1,
             max = 1,
             permission = "citizens.npc.hitbox")
     public void hitbox(CommandContext args, CommandSender sender, NPC npc, @Flag("scale") Float scale,
-            @Flag("width") Float width, @Flag("height") Float height) {
+            @Flag("width") Float width, @Flag("height") Float height, @Flag("offset") Vector offset) {
         if (scale != null) {
             npc.getOrAddTrait(BoundingBoxTrait.class).setScale(scale);
         }
@@ -1310,6 +1309,9 @@ public class NPCCommands {
         }
         if (height != null) {
             npc.getOrAddTrait(BoundingBoxTrait.class).setHeight(height);
+        }
+        if (offset != null) {
+            npc.getOrAddTrait(BoundingBoxTrait.class).setOffset(offset);
         }
         EntityDim dim = npc.getOrAddTrait(BoundingBoxTrait.class).getAdjustedDimensions();
         Messaging.sendTr(sender, Messages.BOUNDING_BOX_SET, "width " + dim.width + " height " + dim.height);
@@ -1830,6 +1832,8 @@ public class NPCCommands {
             toggle = false;
         }
         if (perPlayer != null) {
+            if (((Citizens) CitizensAPI.getPlugin()).getProtocolLibListener() == null)
+                throw new CommandException("ProtocolLib must be enabled to use this feature");
             trait.setPerPlayer(perPlayer);
             Messaging.sendTr(sender, perPlayer ? Messages.LOOKCLOSE_PERPLAYER_SET : Messages.LOOKCLOSE_PERPLAYER_UNSET,
                     npc.getName());
@@ -2853,8 +2857,7 @@ public class NPCCommands {
         if (yaw != null) {
             NMS.setBodyYaw(npc.getEntity(), yaw);
             if (npc.getEntity().getType() == EntityType.PLAYER) {
-                NMS.sendPositionUpdateNearby(npc.getEntity(), true, yaw, npc.getEntity().getLocation().getPitch(),
-                        null);
+                NMS.sendRotationPacketNearby(npc.getEntity(), yaw, npc.getEntity().getLocation().getPitch(), null);
                 PlayerAnimation.ARM_SWING.play((Player) npc.getEntity());
             }
         }
@@ -2994,7 +2997,7 @@ public class NPCCommands {
         if (slot == null)
             throw new CommandUsageException();
 
-        if (item == null && args.argsLength() == 3 && args.getString(2).equalsIgnoreCase("hand")) {
+        if (args.argsLength() == 3 && args.getString(2).equalsIgnoreCase("hand")) {
             if (!(sender instanceof Player))
                 throw new ServerCommandException();
             item = ((Player) sender).getItemInHand().clone();
@@ -3470,6 +3473,19 @@ public class NPCCommands {
 
     @Command(
             aliases = { "npc" },
+            usage = "spectate (-r(eset))",
+            desc = "",
+            flags = "r",
+            modifiers = { "spectate" },
+            min = 2,
+            max = 2,
+            permission = "citizens.npc.spectate")
+    public void spectate(CommandContext args, Player sender, NPC npc) throws CommandException {
+        NMS.sendCameraPacket(sender, args.hasFlag('r') ? null : npc.getEntity());
+    }
+
+    @Command(
+            aliases = { "npc" },
             usage = "speed [speed]",
             desc = "",
             modifiers = { "speed" },
@@ -3769,13 +3785,14 @@ public class NPCCommands {
 
     @Command(
             aliases = { "npc" },
-            usage = "wander (add x y z world)",
+            usage = "wander (add x y z world) | (worldguardregion [region]) | (xyrange [xrange] [yrange])",
             desc = "",
             modifiers = { "wander" },
             min = 1,
             max = 6,
             permission = "citizens.npc.wander")
-    public void wander(CommandContext args, CommandSender sender, NPC npc, @Arg(1) String command)
+    public void wander(CommandContext args, CommandSender sender, NPC npc,
+            @Arg(value = 1, completions = { "add", "worldguardregion", "xyrange", "pathfind", "delay" }) String command)
             throws CommandException {
         Waypoints trait = npc.getOrAddTrait(Waypoints.class);
         if (args.argsLength() == 1) {
@@ -3784,23 +3801,45 @@ public class NPCCommands {
             }
             trait.setWaypointProvider(trait.getCurrentProviderName().equals("wander") ? "linear" : "wander");
             Messaging.sendTr(sender, Messages.WAYPOINT_PROVIDER_SET, trait.getCurrentProviderName());
-        } else if (command.equals("add")) {
+            return;
+        }
+        if (!(trait.getCurrentProvider() instanceof WanderWaypointProvider)) {
+            trait.setWaypointProvider("wander");
+        }
+        WanderWaypointProvider provider = (WanderWaypointProvider) trait.getCurrentProvider();
+        if (command.equals("add")) {
             if (args.argsLength() < 5)
                 throw new CommandUsageException();
 
-            WaypointProvider provider = trait.getCurrentProvider();
-            if (!(provider instanceof WanderWaypointProvider)) {
-                trait.setWaypointProvider("wander");
-                provider = trait.getCurrentProvider();
-            }
             World world = args.argsLength() > 5 ? Bukkit.getWorld(args.getString(5))
                     : npc.getStoredLocation().getWorld();
             if (world == null)
                 throw new CommandException(Messages.WORLD_NOT_FOUND);
 
             Location loc = new Location(world, args.getInteger(2), args.getInteger(3), args.getInteger(4));
-            ((WanderWaypointProvider) provider).addRegionCentre(loc);
+            provider.addRegionCentre(loc);
             Messaging.sendTr(sender, Messages.WAYPOINT_ADDED, Util.prettyPrintLocation(loc));
+        } else if (command.equals("worldguardregion")) {
+            if (args.argsLength() != 3)
+                throw new CommandUsageException();
+            String region = args.getString(2);
+            provider.setWorldGuardRegion(region);
+            Messaging.sendTr(sender, Messages.WANDER_WORLDGUARD_REGION_SET, region);
+        } else if (command.equals("xyrange")) {
+            if (args.argsLength() != 4)
+                throw new CommandUsageException();
+            provider.setXYRange(args.getInteger(2), args.getInteger(3));
+            Messaging.sendTr(sender, Messages.WANDER_XY_RANGE_SET, provider.getXRange(), provider.getYRange());
+        } else if (command.equals("pathfind")) {
+            if (args.argsLength() != 3)
+                throw new CommandUsageException();
+            provider.setPathfind(Boolean.parseBoolean(args.getString(2)));
+            Messaging.sendTr(sender, Messages.WANDER_PATHFIND_SET, provider.isPathfind());
+        } else if (command.equals("delay")) {
+            if (args.argsLength() != 3)
+                throw new CommandUsageException();
+            provider.setDelay(Util.parseTicks(args.getString(2)));
+            Messaging.sendTr(sender, Messages.WANDER_DELAY_SET, provider.getDelay());
         }
     }
 
@@ -3899,7 +3938,7 @@ public class NPCCommands {
 
     static {
         try {
-            SUPPORT_RAYTRACE = World.class.getMethod("rayTraceEntities", Location.class, Vector.class,
+            SUPPORT_RAYTRACE = World.class.getMethod("rayTraceEntities", Location.class, java.util.Vector.class,
                     double.class) != null;
         } catch (Exception e) {
         }

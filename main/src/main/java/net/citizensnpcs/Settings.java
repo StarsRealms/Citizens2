@@ -23,6 +23,7 @@ import net.citizensnpcs.api.util.Messaging;
 import net.citizensnpcs.api.util.SpigotUtil;
 import net.citizensnpcs.api.util.Storage;
 import net.citizensnpcs.api.util.YamlStorage;
+import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.Util;
 
 public class Settings {
@@ -66,16 +67,13 @@ public class Settings {
             file = new File(CitizensAPI.getPlugin().getDataFolder(), Setting.DEBUG_FILE.asString());
         }
         Messaging.configure(file, Setting.DEBUG_MODE.asBoolean(), Setting.RESET_FORMATTING_ON_COLOR_CHANGE.asBoolean(),
-                Setting.MESSAGE_COLOUR.asString(), Setting.HIGHLIGHT_COLOUR.asString(),
-                Setting.ERROR_COLOUR.asString());
+                Setting.MESSAGE_COLOUR.asString(), Setting.HIGHLIGHT_COLOUR.asString(), Setting.ERROR_COLOUR.asString(),
+                NMS::sendComponent);
     }
 
     public enum Setting {
         ALWAYS_USE_NAME_HOLOGRAM("Always use holograms for names instead of only for hex colors / placeholders",
                 "npc.always-use-name-holograms", false),
-        ASTAR_ITERATIONS_PER_TICK("Number of blocks to search per tick (Citizens pathfinder)",
-                "npc.pathfinding.new-finder.iterations-per-tick", "npc.pathfinding.new-finder.iterations-per-tick",
-                250),
         AUTH_SERVER_URL("Search for gameprofiles using this URL", "general.authlib.profile-url",
                 "https://sessionserver.mojang.com/session/minecraft/profile/"),
         BOSSBAR_RANGE("The default bossbar range, in blocks", "npc.default.bossbar-view-range", 64),
@@ -96,10 +94,20 @@ public class Settings {
         CHAT_RANGE("Nearby player range in blocks", "npc.chat.options.range", 5),
         CHECK_MINECRAFT_VERSION("Whether to check the minecraft version for compatibility (do not change)",
                 "advanced.check-minecraft-version", true),
+        CITIZENS_PATHFINDER_ASTAR_ITERATIONS_PER_TICK("Number of blocks to pathfind per tick",
+                "npc.pathfinding.citizens.blocks-per-tick", 250),
+        CITIZENS_PATHFINDER_ASYNC_CHUNK_CACHE_TTL(
+                "Duration of time to keep chunks used in async pathfinding in memory for.<br>Decrease this value if you expect chunks to be changed rapidly during pathfinding, or increase it if chunks rarely change during pathfinding at the expense of memory.",
+                "npc.pathfinding.citizens.async-chunk-cache-expiry", "5s"),
+        CITIZENS_PATHFINDER_CHECK_BOUNDING_BOXES(
+                "Whether to check bounding boxes when pathfinding such as between fences, inside doors, or other half-blocks",
+                "npc.pathfinding.citizens.check-bounding-boxes", false),
+        CITIZENS_PATHFINDER_MAXIMUM_ASTAR_ITERATIONS("The maximum number of blocks to check when pathfinding",
+                "npc.pathfinding.citizens.maximum-search-blocks", 1024),
+        CITIZENS_PATHFINDER_OPENS_DOORS("Whether to open doors while pathfinding (should close them as well)",
+                "npc.pathfinding.citizens.open-doors", false),
         CONTROLLABLE_GROUND_DIRECTION_MODIFIER("The percentage to increase speed when controlling NPCs on the ground",
                 "npc.controllable.ground-direction-modifier", 1.0D),
-        DEBUG_CHUNK_LOADS("Debug chunk load stack traces, not as useful in recent Minecraft versions",
-                "general.debug-chunk-loads", false),
         DEBUG_FILE("Send Citizens debug output to a specific file", "general.debug-file", ""),
         DEBUG_MODE("Enable Citizens debugging", "general.debug-mode", false),
         DEBUG_PATHFINDING("Debug pathfinding by showing fake target blocks", "npc.pathfinding.debug",
@@ -132,12 +140,12 @@ public class Settings {
                 "npc.limits.default-limit", 10),
         DEFAULT_PATH_DISTANCE_MARGIN(
                 "Default PATHFINDING distance in blocks where the NPC will consider pathfinding complete<br>Note: this is different from the MOVEMENT distance, which is specified by the distance-margin<br>Set to 0 if you want to try pathfind exactly to the target destination",
-                "npc.pathfinding.default-path-distance-margin", 1),
+                "npc.pathfinding.default-path-distance-margin", 0),
         DEFAULT_PATHFINDER_UPDATE_PATH_RATE("How often to repathfind when targeting a dynamic target such as an entity",
                 "npc.pathfinding.update-path-rate", "1s"),
         DEFAULT_PATHFINDING_RANGE(
                 "The default pathfinding range in blocks<br>Shouldn't be set too high to avoid lag - try pathfinding in shorter segments instead",
-                "npc.default.pathfinding.range", "npc.pathfinding.default-range-blocks", 75F),
+                "npc.default.pathfinding.range", "npc.pathfinding.default-range-blocks", 100F),
         DEFAULT_RANDOM_LOOK_CLOSE("Default random look close enabled", "npc.default.look-close.random-look-enabled",
                 false),
         DEFAULT_RANDOM_LOOK_DELAY("Default random look delay", "npc.default.look-close.random-look-delay", "3s"),
@@ -225,17 +233,9 @@ public class Settings {
         MAX_NPC_SKIN_RETRIES(
                 "How many times to try load NPC skins (due to Minecraft rate-limiting skin requests, should rarely be less than 5",
                 "npc.skins.max-retries", -1),
-        MAXIMUM_ASTAR_ITERATIONS("The maximum number of blocks to check when pathfinding",
-                "npc.pathfinding.maximum-new-pathfinder-iterations", "npc.pathfinding.new-finder.maximum-iterations",
-                1024),
-        MAXIMUM_VISITED_NODES("The maximum number of blocks to check", "npc.pathfinding.maximum-visited-blocks",
-                "npc.pathfinding.minecraft.max-visited-blocks", 1024),
         MESSAGE_COLOUR("general.color-scheme.message", "<green>"),
-        NEW_PATHFINDER_CHECK_BOUNDING_BOXES(
-                "Whether to check bounding boxes when pathfinding such as between fences, inside doors, or other half-blocks",
-                "npc.pathfinding.new-finder.check-bounding-boxes", false),
-        NEW_PATHFINDER_OPENS_DOORS("Whether to open doors while pathfinding (should close them as well)",
-                "npc.pathfinding.new-finder.open-doors", false),
+        MINECRAFT_PATHFINDER_MAXIMUM_VISITED_NODES("The maximum number of blocks to check when pathfinding",
+                "npc.pathfinding.minecraft.maximum-search-blocks", 1024),
         NPC_ATTACK_DISTANCE("The range in blocks before attacking the target", "npc.pathfinding.attack-range", 1.75),
         NPC_COMMAND_GLOBAL_COMMAND_COOLDOWN(
                 "The global cooldown before a command can be used again, must be in seconds",
@@ -271,7 +271,8 @@ public class Settings {
         PATHFINDER_FALL_DISTANCE(
                 "The default allowed maximum fall distance when pathfinding, set to -1 to use the default value",
                 "npc.pathfinding.allowed-fall-distance", -1),
-        PATHFINDER_TYPE("The pathfinder type.<br>Valid options are: CITIZENS or MINECRAFT.",
+        PATHFINDER_TYPE(
+                "The pathfinder type.<br>Valid options are: CITIZENS, CITIZENS_ASYNC or MINECRAFT.<br>CITIZENS_ASYNC is a new option that is faster but requires more than one processor core and more memory.",
                 "npc.pathfinding.pathfinder-type", "MINECRAFT"),
         PLACEHOLDER_SKIN_UPDATE_FREQUENCY("How often to update skin placeholders",
                 "npc.skins.placeholder-update-frequency-ticks", "npc.skins.placeholder-update-frequency", "5m"),
@@ -299,6 +300,9 @@ public class Settings {
         SHOP_GLOBAL_VIEW_PERMISSION(
                 "The global view permission that players need to view any NPC shop<br>Defaults to empty (no permission required).",
                 "npc.defaults.shops.global-view-permission", "npc.shops.global-view-permission", ""),
+        SHOP_USE_DEFAULT_DESCRIPTION(
+                "Whether to add default item description placeholders for all shop items by default.",
+                "npc.shops.add-default-item-description", false),
         STORAGE_FILE("storage.file", "saves.yml"),
         TABLIST_REMOVE_PACKET_DELAY("How long to wait before sending the tablist remove packet",
                 "npc.tablist.remove-packet-delay", "2t"),
@@ -344,6 +348,13 @@ public class Settings {
 
         public double asDouble() {
             return ((Number) value).doubleValue();
+        }
+
+        public Duration asDuration() {
+            if (duration == null) {
+                duration = SpigotUtil.parseDuration(asString(), null);
+            }
+            return duration;
         }
 
         public float asFloat() {

@@ -1,20 +1,22 @@
-package net.citizensnpcs.nms.v1_21_R5.entity;
+package net.citizensnpcs.nms.v1_19_R3.entity;
+
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.v1_19_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_19_R3.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_19_R3.entity.CraftHoglin;
+import org.bukkit.util.Vector;
 
 import net.citizensnpcs.api.npc.NPC;
-import net.citizensnpcs.nms.v1_21_R5.util.ForwardingNPCHolder;
-import net.citizensnpcs.nms.v1_21_R5.util.NMSBoundingBox;
-import net.citizensnpcs.nms.v1_21_R5.util.NMSImpl;
+import net.citizensnpcs.nms.v1_19_R3.util.ForwardingNPCHolder;
+import net.citizensnpcs.nms.v1_19_R3.util.NMSBoundingBox;
+import net.citizensnpcs.nms.v1_19_R3.util.NMSImpl;
 import net.citizensnpcs.npc.CitizensNPC;
 import net.citizensnpcs.npc.ai.NPCHolder;
-import net.citizensnpcs.trait.Controllable;
-import net.citizensnpcs.trait.HorseModifiers;
 import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.Util;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.server.level.ServerEntity;
+import net.minecraft.core.PositionImpl;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -22,66 +24,36 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.horse.SkeletonHorse;
+import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraft.world.level.portal.TeleportTransition;
-import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftSkeletonHorse;
 
-public class HorseSkeletonController extends MobEntityController {
-    public HorseSkeletonController() {
-        super(EntityHorseSkeletonNPC.class, EntityType.SKELETON_HORSE);
+public class HoglinController extends MobEntityController {
+    public HoglinController() {
+        super(EntityHoglinNPC.class);
     }
 
     @Override
-    public void create(Location at, NPC npc) {
-        npc.getOrAddTrait(HorseModifiers.class);
-        super.create(at, npc);
+    public org.bukkit.entity.Hoglin getBukkitEntity() {
+        return (org.bukkit.entity.Hoglin) super.getBukkitEntity();
     }
 
-    @Override
-    public org.bukkit.entity.SkeletonHorse getBukkitEntity() {
-        return (org.bukkit.entity.SkeletonHorse) super.getBukkitEntity();
-    }
-
-    public static class EntityHorseSkeletonNPC extends SkeletonHorse implements NPCHolder {
-        private double baseMovementSpeed;
+    public static class EntityHoglinNPC extends Hoglin implements NPCHolder {
         private final CitizensNPC npc;
-        private boolean riding;
 
-        public EntityHorseSkeletonNPC(EntityType<? extends SkeletonHorse> types, Level level) {
+        public EntityHoglinNPC(EntityType<? extends Hoglin> types, Level level) {
             this(types, level, null);
         }
 
-        public EntityHorseSkeletonNPC(EntityType<? extends SkeletonHorse> types, Level level, NPC npc) {
+        public EntityHoglinNPC(EntityType<? extends Hoglin> types, Level level, NPC npc) {
             super(types, level);
             this.npc = (CitizensNPC) npc;
-            if (npc != null) {
-                ((org.bukkit.entity.SkeletonHorse) getBukkitEntity())
-                        .setDomestication(((org.bukkit.entity.SkeletonHorse) getBukkitEntity()).getMaxDomestication());
-                baseMovementSpeed = this.getAttribute(Attributes.MOVEMENT_SPEED).getValue();
-            }
-        }
-
-        @Override
-        public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity entitytrackerentry) {
-            var packet = net.citizensnpcs.nms.v1_21_R5.util.CustomEntityTraitUtil.packet(npc,entitytrackerentry,this);
-            if (packet != null) {
-                return packet;
-            }
-            return super.getAddEntityPacket(entitytrackerentry);
         }
 
         @Override
@@ -97,14 +69,7 @@ public class HorseSkeletonController extends MobEntityController {
         }
 
         @Override
-        public boolean canSimulateMovement() {
-            if (npc != null && riding)
-                return true;
-            return super.canSimulateMovement();
-        }
-
-        @Override
-        public boolean causeFallDamage(double f, float f1, DamageSource damagesource) {
+        public boolean causeFallDamage(float f, float f1, DamageSource damagesource) {
             if (npc == null || !npc.isFlyable())
                 return super.causeFallDamage(f, f1, damagesource);
             return false;
@@ -125,49 +90,37 @@ public class HorseSkeletonController extends MobEntityController {
         }
 
         @Override
-        public void customServerAiStep(ServerLevel level) {
-            super.customServerAiStep(level);
+        public void customServerAiStep() {
             if (npc != null) {
                 NMSImpl.updateMinecraftAIState(npc, this);
-                if (npc.hasTrait(Controllable.class) && npc.getOrAddTrait(Controllable.class).isEnabled()) {
-                    riding = getBukkitEntity().getPassengers().size() > 0;
-                    getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(
-                            baseMovementSpeed * npc.getNavigator().getDefaultParameters().speedModifier());
-                } else {
-                    riding = false;
-                }
-                if (riding) {
-                    if (npc.getNavigator().isNavigating()) {
-                        org.bukkit.entity.Entity basePassenger = passengers.get(0).getBukkitEntity();
-                        NMS.look(basePassenger, getYRot(), getXRot());
-                    }
-                    setFlag(4, true); // datawatcher method
-                }
-                NMS.setStepHeight(getBukkitEntity(), 1);
+                setImmuneToZombification(true);
+            }
+            super.customServerAiStep();
+            if (npc != null) {
                 npc.update();
             }
         }
 
         @Override
-        public SoundEvent getAmbientSound() {
+        protected SoundEvent getAmbientSound() {
             return NMSImpl.getSoundEffect(npc, super.getAmbientSound(), NPC.Metadata.AMBIENT_SOUND);
         }
 
         @Override
         public CraftEntity getBukkitEntity() {
             if (npc != null && !(super.getBukkitEntity() instanceof NPCHolder)) {
-                NMSImpl.setBukkitEntity(this, new HorseSkeletonNPC(this));
+                NMSImpl.setBukkitEntity(this, new HoglinNPC(this));
             }
             return super.getBukkitEntity();
         }
 
         @Override
-        public SoundEvent getDeathSound() {
+        protected SoundEvent getDeathSound() {
             return NMSImpl.getSoundEffect(npc, super.getDeathSound(), NPC.Metadata.DEATH_SOUND);
         }
 
         @Override
-        public SoundEvent getHurtSound(DamageSource damagesource) {
+        protected SoundEvent getHurtSound(DamageSource damagesource) {
             return NMSImpl.getSoundEffect(npc, super.getHurtSound(damagesource), NPC.Metadata.HURT_SOUND);
         }
 
@@ -203,19 +156,14 @@ public class HorseSkeletonController extends MobEntityController {
         }
 
         @Override
-        public boolean isVehicle() {
-            return npc != null && npc.getNavigator().isNavigating() ? false : super.isVehicle();
-        }
-
-        @Override
         public void knockback(double strength, double dx, double dz) {
             NMS.callKnockbackEvent(npc, (float) strength, dx, dz, evt -> super.knockback((float) evt.getStrength(),
                     evt.getKnockbackVector().getX(), evt.getKnockbackVector().getZ()));
         }
 
         @Override
-        protected AABB makeBoundingBox(Vec3 vec3) {
-            return NMSBoundingBox.makeBB(npc, super.makeBoundingBox(vec3));
+        protected AABB makeBoundingBox() {
+            return NMSBoundingBox.makeBB(npc, super.makeBoundingBox());
         }
 
         @Override
@@ -227,12 +175,11 @@ public class HorseSkeletonController extends MobEntityController {
         }
 
         @Override
-        public void onSyncedDataUpdated(EntityDataAccessor<?> datawatcherobject) {
-            if (npc == null) {
-                super.onSyncedDataUpdated(datawatcherobject);
-                return;
+        public void push(double x, double y, double z) {
+            Vector vector = Util.callPushEvent(npc, x, y, z);
+            if (vector != null) {
+                super.push(vector.getX(), vector.getY(), vector.getZ());
             }
-            NMSImpl.checkAndUpdateHeight(this, datawatcherobject, super::onSyncedDataUpdated);
         }
 
         @Override
@@ -246,15 +193,15 @@ public class HorseSkeletonController extends MobEntityController {
         }
 
         @Override
-        public boolean save(ValueOutput save) {
+        public boolean save(CompoundTag save) {
             return npc == null ? super.save(save) : false;
         }
 
         @Override
-        public Entity teleport(TeleportTransition transition) {
+        public Entity teleportTo(ServerLevel worldserver, PositionImpl location) {
             if (npc == null)
-                return super.teleport(transition);
-            return NMSImpl.teleportAcrossWorld(this, transition);
+                return super.teleportTo(worldserver, location);
+            return NMSImpl.teleportAcrossWorld(this, worldserver, location);
         }
 
         @Override
@@ -262,7 +209,7 @@ public class HorseSkeletonController extends MobEntityController {
             if (npc == null || !npc.isFlyable()) {
                 super.travel(vec3d);
             } else {
-                NMSImpl.moveLogic(this, vec3d);
+                NMSImpl.flyingMoveLogic(this, vec3d);
             }
         }
 
@@ -279,8 +226,8 @@ public class HorseSkeletonController extends MobEntityController {
         }
     }
 
-    public static class HorseSkeletonNPC extends CraftSkeletonHorse implements ForwardingNPCHolder {
-        public HorseSkeletonNPC(EntityHorseSkeletonNPC entity) {
+    public static class HoglinNPC extends CraftHoglin implements ForwardingNPCHolder {
+        public HoglinNPC(EntityHoglinNPC entity) {
             super((CraftServer) Bukkit.getServer(), entity);
         }
     }

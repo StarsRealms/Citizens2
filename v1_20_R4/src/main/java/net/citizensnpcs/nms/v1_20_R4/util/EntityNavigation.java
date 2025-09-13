@@ -1,4 +1,4 @@
-package net.citizensnpcs.nms.v1_21_R5.util;
+package net.citizensnpcs.nms.v1_20_R4.util;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -8,7 +8,6 @@ import com.google.common.collect.ImmutableSet;
 
 import net.citizensnpcs.Settings.Setting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.tags.BlockTags;
@@ -130,11 +129,6 @@ public class EntityNavigation extends PathNavigation {
         return true;*/
     }
 
-    @Override
-    public boolean canNavigateGround() {
-        return true;
-    }
-
     public boolean canOpenDoors() {
         return this.nodeEvaluator.canPassDoors();
     }
@@ -154,33 +148,27 @@ public class EntityNavigation extends PathNavigation {
                 SectionPos.blockToSectionCoord(var0.getZ()));
         if (var2 == null)
             return null;
-
-        BlockPos.MutableBlockPos var3;
-        if (var2.getBlockState(var0).isAir()) {
-            var3 = var0.mutable().move(Direction.DOWN);
-
-            while (var3.getY() > this.level.getMinY() && var2.getBlockState(var3).isAir()) {
-                var3.move(Direction.DOWN);
+        else {
+            BlockPos var3;
+            if (var2.getBlockState(var0).isAir()) {
+                for (var3 = var0.below(); var3.getY() > this.level.getMinBuildHeight()
+                        && var2.getBlockState(var3).isAir(); var3 = var3.below()) {
+                }
+                if (var3.getY() > this.level.getMinBuildHeight())
+                    return supercreatePath(var3.above(), var1);
+                while (var3.getY() < this.level.getMaxBuildHeight() && var2.getBlockState(var3).isAir()) {
+                    var3 = var3.above();
+                }
+                var0 = var3;
             }
-            if (var3.getY() > this.level.getMinY()) {
-                return supercreatePath(var3.above(), var1);
+            if (!var2.getBlockState(var0).isSolid())
+                return supercreatePath(var0, var1);
+            else {
+                for (var3 = var0.above(); var3.getY() < this.level.getMaxBuildHeight()
+                        && var2.getBlockState(var3).isSolid(); var3 = var3.above()) {
+                }
+                return supercreatePath(var3, var1);
             }
-            var3.setY(var0.getY() + 1);
-
-            while (var3.getY() <= this.level.getMaxY() && var2.getBlockState(var3).isAir()) {
-                var3.move(Direction.UP);
-            }
-            var0 = var3;
-        }
-        if (!var2.getBlockState(var0).isSolid()) {
-            return supercreatePath(var0, var1);
-        } else {
-            var3 = var0.mutable().move(Direction.UP);
-
-            while (var3.getY() <= this.level.getMaxY() && var2.getBlockState(var3).isSolid()) {
-                var3.move(Direction.UP);
-            }
-            return supercreatePath(var3.immutable(), var1);
         }
     }
 
@@ -206,7 +194,7 @@ public class EntityNavigation extends PathNavigation {
 
     @Override
     protected Path createPath(Set<BlockPos> var0, int var1, boolean headAbove, int reachRange, float range) {
-        if (var0.isEmpty() || this.mob.getY() < this.level.getMinY() || !canUpdatePath())
+        if (var0.isEmpty() || this.mob.getY() < this.level.getMinBuildHeight() || !canUpdatePath())
             return null;
         if (this.path != null && !this.path.isDone() && var0.contains(this.targetPos))
             return this.path;
@@ -356,7 +344,7 @@ public class EntityNavigation extends PathNavigation {
     @Override
     public boolean isStableDestination(BlockPos var0) {
         BlockPos var1 = var0.below();
-        return this.level.getBlockState(var1).isSolidRender();
+        return this.level.getBlockState(var1).isSolidRender(this.level, var1);
     }
 
     @Override
@@ -431,7 +419,6 @@ public class EntityNavigation extends PathNavigation {
         this.nodeEvaluator.setCanFloat(var0);
     }
 
-    @Override
     public void setCanOpenDoors(boolean var0) {
         this.nodeEvaluator.setCanOpenDoors(var0);
     }
@@ -454,11 +441,12 @@ public class EntityNavigation extends PathNavigation {
     public boolean shouldRecomputePath(BlockPos var0) {
         if (this.hasDelayedRecomputation || this.path == null || this.path.isDone() || this.path.getNodeCount() == 0)
             return false;
-        Node var1 = this.path.getEndNode();
-        Vec3 var2 = new Vec3((var1.x + this.mob.getX()) / 2.0D, (var1.y + this.mob.getY()) / 2.0D,
-                (var1.z + this.mob.getZ()) / 2.0D);
-        return var0.closerToCenterThan(var2, this.path.getNodeCount() - this.path.getNextNodeIndex());
-
+        else {
+            Node var1 = this.path.getEndNode();
+            Vec3 var2 = new Vec3((var1.x + this.mob.getX()) / 2.0D, (var1.y + this.mob.getY()) / 2.0D,
+                    (var1.z + this.mob.getZ()) / 2.0D);
+            return var0.closerToCenterThan(var2, this.path.getNodeCount() - this.path.getNextNodeIndex());
+        }
     }
 
     private boolean shouldTargetNextNodeInDirection(Vec3 var0) {

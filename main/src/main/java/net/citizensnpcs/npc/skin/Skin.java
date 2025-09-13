@@ -46,7 +46,6 @@ public class Skin {
      *
      * @param skinName
      *            The name of the player the skin belongs to.
-     * @param forceUpdate
      */
     Skin(String skinName) {
         this.skinName = skinName.toLowerCase(Locale.ROOT);
@@ -134,15 +133,10 @@ public class Skin {
     private void fetch() {
         int maxRetries = Setting.MAX_NPC_SKIN_RETRIES.asInt();
         if (maxRetries > -1 && fetchRetries >= maxRetries) {
-            if (Messaging.isDebugging()) {
-                Messaging.debug("Reached max skin fetch retries for '" + skinName + "'");
-            }
+            Messaging.idebug(() -> "Reached max skin fetch retries for '" + skinName + "'");
             return;
         }
         if (skinName.length() < 3 || skinName.length() > 16) {
-            if (Messaging.isDebugging()) {
-                Messaging.debug("Skin name invalid length '" + skinName + "'");
-            }
             return;
         }
         if (skinName.toLowerCase(Locale.ROOT).startsWith("cit-"))
@@ -184,10 +178,9 @@ public class Skin {
             Messaging.idebug(() -> "Reached max skin fetch retries for '" + skinName + "'");
             return;
         }
-        if (skinName.length() < 3 || skinName.length() > 16) {
-            Messaging.idebug(() -> "Skin name invalid length '" + skinName + "'");
+        if (skinName.length() < 3 || skinName.length() > 16)
             return;
-        }
+
         if (skinName.toLowerCase(Locale.ROOT).startsWith("cit-"))
             return;
 

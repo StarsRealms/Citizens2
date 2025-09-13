@@ -16,6 +16,7 @@ import net.citizensnpcs.api.CitizensPlugin;
 import net.citizensnpcs.api.LocationLookup;
 import net.citizensnpcs.api.NMSHelper;
 import net.citizensnpcs.api.ai.speech.SpeechContext;
+import net.citizensnpcs.api.astar.pathfinder.AsyncChunkCache;
 import net.citizensnpcs.api.command.CommandManager;
 import net.citizensnpcs.api.command.Injector;
 import net.citizensnpcs.api.event.CitizensEnableEvent;
@@ -58,6 +59,7 @@ import java.util.*;
 
 public class Citizens extends JavaPlugin implements CitizensPlugin {
     private final List<NPCRegistry> anonymousRegistries = Lists.newArrayList();
+    private AsyncChunkCache asyncChunkCache;
     private final CommandManager commands = new CommandManager();
     private Settings config;
     private boolean enabled;
@@ -154,13 +156,23 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
 
             if (save) {
                 if (registry == npcRegistry) {
-                    storeNPCs(false);
+                    storeNPCsNow();
                 } else {
                     registry.saveToStore();
                 }
             }
             registry.despawnNPCs(DespawnReason.RELOAD);
         }
+    }
+
+    @Override
+    public AsyncChunkCache getAsyncChunkCache() {
+        if (asyncChunkCache == null) {
+            // TODO: should parallelism be configurable? or too confusing?
+            asyncChunkCache = new AsyncChunkCache(this, Runtime.getRuntime().availableProcessors() > 8 ? 4 : 2,
+                    Setting.CITIZENS_PATHFINDER_ASYNC_CHUNK_CACHE_TTL.asDuration().toMillis());
+        }
+        return asyncChunkCache;
     }
 
     @Override
@@ -173,7 +185,7 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
     }
 
     @Override
-    public net.citizensnpcs.api.npc.NPCSelector getDefaultNPCSelector() {
+    public NPCSelector getDefaultNPCSelector() {
         return selector;
     }
 
@@ -266,42 +278,42 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         // Unfortunately, transitive dependency management is not supported in this library.
 
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-text-minimessage")
-                .version("4.23.0").relocate("net{}kyori", "clib{}net{}kyori").build());
-        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-api").version("4.23.0")
+                .version("4.24.0").relocate("net{}kyori", "clib{}net{}kyori").build());
+        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-api").version("4.24.0")
                 .relocate("net{}kyori", "clib{}net{}kyori").build());
-        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-key").version("4.23.0")
+        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-key").version("4.24.0")
                 .relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("examination-api").version("1.3.0")
                 .relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("examination-string").version("1.3.0")
                 .relocate("net{}kyori", "clib{}net{}kyori").build());
-        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-platform-bukkit").version("4.4.0")
+        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-platform-bukkit").version("4.4.1")
                 .relocate("net{}kyori", "clib{}net{}kyori").build());
-        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-platform-api").version("4.4.0")
+        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-platform-api").version("4.4.1")
                 .relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-text-serializer-bungeecord")
-                .version("4.4.0").relocate("net{}kyori", "clib{}net{}kyori").build());
+                .version("4.4.1").relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-text-serializer-legacy")
-                .version("4.23.0").relocate("net{}kyori", "clib{}net{}kyori").build());
-        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-nbt").version("4.23.0")
+                .version("4.24.0").relocate("net{}kyori", "clib{}net{}kyori").build());
+        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-nbt").version("4.24.0")
                 .relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-text-serializer-gson")
-                .version("4.23.0").relocate("net{}kyori", "clib{}net{}kyori").build());
+                .version("4.24.0").relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-text-serializer-json")
-                .version("4.23.0").relocate("net{}kyori", "clib{}net{}kyori").build());
+                .version("4.24.0").relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("option").version("1.1.0")
                 .relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("org{}jspecify").artifactId("jspecify").version("1.0.0").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-text-serializer-commons")
-                .version("4.23.0").relocate("net{}kyori", "clib{}net{}kyori").build());
+                .version("4.24.0").relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-text-serializer-gson-legacy-impl")
-                .version("4.23.0").relocate("net{}kyori", "clib{}net{}kyori").build());
+                .version("4.24.0").relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-text-serializer-json-legacy-impl")
-                .version("4.23.0").relocate("net{}kyori", "clib{}net{}kyori").build());
-        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-platform-facet").version("4.4.0")
+                .version("4.24.0").relocate("net{}kyori", "clib{}net{}kyori").build());
+        lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-platform-facet").version("4.4.1")
                 .relocate("net{}kyori", "clib{}net{}kyori").build());
         lib.loadLibrary(Library.builder().groupId("net{}kyori").artifactId("adventure-platform-viaversion")
-                .version("4.4.0").relocate("net{}kyori", "clib{}net{}kyori").build());
+                .version("4.4.1").relocate("net{}kyori", "clib{}net{}kyori").build());
     }
 
     @Override
@@ -312,7 +324,7 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
 
     public void onDependentPluginDisable() {
         if (enabled) {
-            storeNPCs(false);
+            storeNPCsNow();
             saveOnDisable = false;
         }
     }
@@ -329,6 +341,10 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         templateRegistry = null;
         npcRegistry = null;
         locationLookup = null;
+        if (asyncChunkCache != null) {
+            asyncChunkCache.shutdown();
+            asyncChunkCache = null;
+        }
         enabled = false;
         saveOnDisable = true;
         ProfileFetcher.shutdown();
@@ -377,7 +393,10 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
 
         traitFactory = new CitizensTraitFactory(this);
         selector = new NPCSelector(this);
+
+        saveResource("templates/citizens/templates.yml", true);
         templateRegistry = new TemplateRegistry(new File(getDataFolder(), "templates").toPath());
+
         if (!new File(getDataFolder(), "skins").exists()) {
             new File(getDataFolder(), "skins").mkdir();
         }
@@ -425,7 +444,7 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
         // Register command classes
         commands.register(AdminCommands.class);
         commands.register(EditorCommands.class);
-        commands.register(NPCCommands.class); 
+        commands.register(NPCCommands.class);
         commands.register(TemplateCommands.class);
         commands.register(TraitCommands.class);
         commands.register(WaypointCommands.class);
@@ -512,6 +531,10 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
             Metrics metrics = new Metrics(this, 2463);
             metrics.addCustomChart(new Metrics.SingleLineChart("total_npcs",
                     () -> npcRegistry == null ? 0 : Iterables.size(npcRegistry)));
+            metrics.addCustomChart(new Metrics.SingleLineChart("total_templates",
+                    () -> npcRegistry == null ? 0
+                            : (int) templateRegistry.getAllTemplates().stream()
+                                    .filter(t -> !t.getKey().getNamespace().equals("citizens")).count()));
             metrics.addCustomChart(new Metrics.SimplePie("locale", () -> Locale.getDefault().getLanguage()));
             metrics.addCustomChart(new Metrics.AdvancedPie("traits", () -> {
                 Map<String, Integer> res = Maps.newHashMap();
@@ -530,23 +553,21 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
     }
 
     public void storeNPCs() {
-        storeNPCs(false);
-    }
-
-    public void storeNPCs(boolean async) {
         if (saves == null)
             return;
         saves.storeAll(npcRegistry);
         shops.storeShops();
-        if (async) {
-            new Thread(() -> {
-                shops.saveToDisk();
-                saves.saveToDiskImmediate();
-            }).start();
-        } else {
-            shops.saveToDisk();
-            saves.saveToDiskImmediate();
-        }
+        shops.saveToDisk();
+        saves.saveToDisk();
+    }
+
+    public void storeNPCsNow() {
+        if (saves == null)
+            return;
+        saves.storeAll(npcRegistry);
+        shops.storeShops();
+        shops.saveToDiskImmediate();
+        saves.saveToDiskImmediate();
     }
 
     @Override
@@ -582,7 +603,7 @@ public class Citizens extends JavaPlugin implements CitizensPlugin {
     private class CitizensSaveTask implements Runnable {
         @Override
         public void run() {
-            storeNPCs(false);
+            storeNPCs();
         }
     }
 }

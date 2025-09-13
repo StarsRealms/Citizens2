@@ -52,6 +52,7 @@ import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
@@ -177,8 +178,6 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
 
     @Override
     public PlayerAdvancements getAdvancements() {
-        if (npc == null)
-            return super.getAdvancements();
         if (advancements == null) {
             advancements = new EmptyAdvancementDataPlayer(getServer().getFixerUpper(), getServer().getPlayerList(),
                     this);
@@ -409,6 +408,15 @@ public class EntityHumanNPC extends ServerPlayer implements NPCHolder, Skinnable
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
+            }
+        }
+        // updatingUsingItem
+        if (isUsingItem()) {
+            if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
+                useItem = this.getItemInHand(this.getUsedItemHand());
+                updateUsingItem(this.useItem);
+            } else {
+                stopUsingItem();
             }
         }
     }

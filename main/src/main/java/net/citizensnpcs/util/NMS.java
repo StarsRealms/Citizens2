@@ -29,6 +29,7 @@ import net.citizensnpcs.trait.PacketNPC;
 import net.citizensnpcs.trait.versioned.ArmadilloTrait.ArmadilloState;
 import net.citizensnpcs.trait.versioned.CamelTrait.CamelPose;
 import net.citizensnpcs.trait.versioned.SnifferTrait.SnifferState;
+import net.citizensnpcs.util.EntityPacketTracker.PacketBundler;
 import net.citizensnpcs.util.EntityPacketTracker.PacketAggregator;
 import org.bukkit.*;
 import org.bukkit.attribute.Attributable;
@@ -170,11 +171,11 @@ public class NMS {
     }
 
     public static EntityPacketTracker createPacketTracker(Entity entity) {
-        return createPacketTracker(entity, new PacketAggregator());
+        return createPacketTracker(entity, new PacketBundler());
     }
 
-    public static EntityPacketTracker createPacketTracker(Entity entity, PacketAggregator agg) {
-        return BRIDGE.createPacketTracker(entity, agg);
+    public static EntityPacketTracker createPacketTracker(Entity entity, PacketBundler bundler) {
+        return BRIDGE.createPacketTracker(entity, bundler);
     }
 
     /*
@@ -546,6 +547,10 @@ public class NMS {
         return null;
     }
 
+    public static float getMovementSpeed(Entity entity) {
+        return BRIDGE.getMovementSpeed(entity);
+    }
+
     public static EntityPacketTracker getPacketTracker(Entity entity) {
         if (entity == null)
             return null;
@@ -617,10 +622,6 @@ public class NMS {
 
     public static Entity getSource(BlockCommandSender sender) {
         return BRIDGE.getSource(sender);
-    }
-
-    public static float getSpeedFor(NPC npc) {
-        return BRIDGE.getSpeedFor(npc);
     }
 
     public static <T> T getStaticObject(Class<?> clazz, String name) {
@@ -792,26 +793,32 @@ public class NMS {
         BRIDGE.replaceTrackerEntry(entity);
     }
 
-    public static void sendPositionUpdate(Entity from, Collection<Player> to, boolean position) {
-        sendPositionUpdate(from, to, position, NMS.getYaw(from), from.getLocation().getPitch(), NMS.getHeadYaw(from));
+    public static void sendCameraPacket(Player player, Entity entity) {
+        BRIDGE.sendCameraPacket(player, entity);
     }
 
-    public static void sendPositionUpdate(Entity from, Collection<Player> to, boolean position, Float bodyYaw,
-            Float pitch, Float headYaw) {
-        BRIDGE.sendPositionUpdate(from, to, position, bodyYaw, pitch, headYaw);
+    public static void sendComponent(Player player, Object component) {
+        BRIDGE.sendComponent(player, component);
     }
 
-    public static void sendPositionUpdateNearby(Entity from, boolean position) {
-        sendPositionUpdateNearby(from, position, NMS.getYaw(from), from.getLocation().getPitch(), NMS.getHeadYaw(from));
+    public static void sendRotationPacket(Entity from, Iterable<Player> to) {
+        sendRotationPacket(from, to, null, null, null);
     }
 
-    public static void sendPositionUpdateNearby(Entity from, boolean position, Float bodyYaw, Float pitch,
-            Float headYaw) {
-        sendPositionUpdate(from,
-                Lists.newArrayList(
-                        Iterables.filter(CitizensAPI.getLocationLookup().getNearbyPlayers(from.getLocation(), 64),
-                                p -> !p.equals(from))),
-                position, bodyYaw, pitch, headYaw);
+    public static void sendRotationPacket(Entity from, Iterable<Player> to, Float bodyYaw, Float pitch, Float headYaw) {
+        BRIDGE.sendPositionUpdate(from, to, false, bodyYaw, pitch, headYaw);
+    }
+
+    public static void sendRotationPacketNearby(Entity from, Float bodyYaw, Float pitch, Float headYaw) {
+        sendRotationPacketNearby(from, bodyYaw, pitch, headYaw, p -> true);
+    }
+
+    public static void sendRotationPacketNearby(Entity from, Float bodyYaw, Float pitch, Float headYaw,
+            Function<Player, Boolean> function) {
+        sendRotationPacket(from,
+                Iterables.filter(CitizensAPI.getLocationLookup().getNearbyPlayers(from.getLocation(), 64),
+                        p -> (function == null || function.apply(p)) && !p.equals(from)),
+                bodyYaw, pitch, headYaw);
     }
 
     public static boolean sendTabListAdd(Player recipient, Player listPlayer) {

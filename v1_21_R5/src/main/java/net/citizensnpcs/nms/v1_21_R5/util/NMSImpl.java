@@ -1,5 +1,55 @@
 package net.citizensnpcs.nms.v1_21_R5.util;
 
+import java.lang.invoke.MethodHandle;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
+import org.bukkit.command.BlockCommandSender;
+import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
+import org.bukkit.craftbukkit.v1_21_R5.CraftSound;
+import org.bukkit.craftbukkit.v1_21_R5.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R5.block.CraftBlock;
+import org.bukkit.craftbukkit.v1_21_R5.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_21_R5.boss.CraftBossBar;
+import org.bukkit.craftbukkit.v1_21_R5.command.CraftBlockCommandSender;
+import org.bukkit.craftbukkit.v1_21_R5.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_21_R5.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R5.inventory.CraftInventoryAnvil;
+import org.bukkit.craftbukkit.v1_21_R5.inventory.view.CraftAnvilView;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.FishHook;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Tameable;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+import org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.scoreboard.Team;
+import org.bukkit.util.Vector;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.*;
 import com.mojang.authlib.GameProfile;
@@ -44,6 +94,17 @@ import net.citizensnpcs.trait.versioned.*;
 import net.citizensnpcs.trait.versioned.ArmadilloTrait.ArmadilloState;
 import net.citizensnpcs.trait.versioned.CamelTrait.CamelPose;
 import net.citizensnpcs.trait.versioned.SnifferTrait.SnifferState;
+import net.citizensnpcs.trait.versioned.SnowmanTrait;
+import net.citizensnpcs.trait.versioned.SpellcasterTrait;
+import net.citizensnpcs.trait.versioned.TextDisplayTrait;
+import net.citizensnpcs.trait.versioned.TropicalFishTrait;
+import net.citizensnpcs.trait.versioned.VexTrait;
+import net.citizensnpcs.trait.versioned.VillagerTrait;
+import net.citizensnpcs.trait.versioned.WardenTrait;
+import net.citizensnpcs.util.EntityPacketTracker;
+import net.citizensnpcs.util.EntityPacketTracker.PacketBundler;
+import net.citizensnpcs.util.Messages;
+import net.citizensnpcs.util.NMS;
 import net.citizensnpcs.util.*;
 import net.citizensnpcs.util.EntityPacketTracker.PacketAggregator;
 import net.citizensnpcs.util.NMS.MinecraftNavigationType;
@@ -58,6 +119,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.PlainTextContents.LiteralContents;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientboundBundlePacket;
+import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
+import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
+import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
+import net.minecraft.network.protocol.game.ClientboundSetPlayerTeamPacket;
+import net.minecraft.network.protocol.game.VecDeltaCodec;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -280,7 +353,7 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
-    public EntityPacketTracker createPacketTracker(org.bukkit.entity.Entity entity, PacketAggregator agg) {
+    public EntityPacketTracker createPacketTracker(org.bukkit.entity.Entity entity, PacketBundler agg) {
         Entity handle = getHandle(entity);
         Set<ServerPlayerConnection> linked = Sets.newIdentityHashSet();
 
@@ -474,6 +547,17 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
+    public float getMovementSpeed(org.bukkit.entity.Entity entity) {
+        if (entity == null || !(entity instanceof org.bukkit.entity.LivingEntity))
+            return DEFAULT_SPEED;
+        LivingEntity handle = getHandle((org.bukkit.entity.LivingEntity) entity);
+        if (handle == null)
+            return DEFAULT_SPEED;
+
+        return (float) handle.getAttributeBaseValue(Attributes.MOVEMENT_SPEED);
+    }
+
+    @Override
     public EntityPacketTracker getPacketTracker(org.bukkit.entity.Entity entity) {
         ServerLevel server = (ServerLevel) getHandle(entity).level();
         TrackedEntity tracked = server.getChunkSource().chunkMap.entityMap.get(entity.getEntityId());
@@ -551,17 +635,6 @@ public class NMSImpl implements NMSBridge {
     public org.bukkit.entity.Entity getSource(BlockCommandSender sender) {
         Entity source = ((CraftBlockCommandSender) sender).getWrapper().getEntity();
         return source != null ? source.getBukkitEntity() : null;
-    }
-
-    @Override
-    public float getSpeedFor(NPC npc) {
-        if (!npc.isSpawned() || !(npc.getEntity() instanceof org.bukkit.entity.LivingEntity))
-            return DEFAULT_SPEED;
-        LivingEntity handle = getHandle((org.bukkit.entity.LivingEntity) npc.getEntity());
-        if (handle == null) {
-            return DEFAULT_SPEED;
-        }
-        return (float) handle.getAttributeBaseValue(Attributes.MOVEMENT_SPEED);
     }
 
     @Override
@@ -1209,8 +1282,18 @@ public class NMSImpl implements NMSBridge {
     }
 
     @Override
-    public void sendPositionUpdate(org.bukkit.entity.Entity from, Collection<Player> to, boolean position,
-            Float bodyYaw, Float pitch, Float headYaw) {
+    public void sendCameraPacket(Player player, org.bukkit.entity.Entity entity) {
+        sendPacket(player, new ClientboundSetCameraPacket(getHandle(entity)));
+    }
+
+    @Override
+    public void sendComponent(Player player, Object component) {
+        ((ServerPlayer) getHandle(player)).sendSystemMessage((Component) component);
+    }
+
+    @Override
+    public void sendPositionUpdate(org.bukkit.entity.Entity from, Iterable<Player> to, boolean position, Float bodyYaw,
+            Float pitch, Float headYaw) {
         List<Packet<?>> toSend = getPositionUpdate(from, position, bodyYaw, pitch, headYaw);
         for (Player dest : to) {
             sendPackets(dest, toSend);
@@ -1783,19 +1866,19 @@ public class NMSImpl implements NMSBridge {
     public void updatePathfindingRange(NPC npc, float pathfindingRange) {
         if (!npc.isSpawned() || !npc.getEntity().getType().isAlive())
             return;
-        LivingEntity en = getHandle((org.bukkit.entity.LivingEntity) npc.getEntity());
-        if (en instanceof MobAI) {
-            ((MobAI) en).updatePathfindingRange(pathfindingRange);
+        LivingEntity handle = getHandle((org.bukkit.entity.LivingEntity) npc.getEntity());
+        if (handle instanceof MobAI) {
+            ((MobAI) handle).updatePathfindingRange(pathfindingRange);
             return;
         }
         if (NAVIGATION_PATHFINDER == null)
             return;
-        PathNavigation navigation = ((Mob) en).getNavigation();
-        AttributeInstance inst = en.getAttribute(Attributes.FOLLOW_RANGE);
+        PathNavigation navigation = ((Mob) handle).getNavigation();
+        AttributeInstance inst = handle.getAttribute(Attributes.FOLLOW_RANGE);
         inst.setBaseValue(pathfindingRange);
-        int mc = Mth.floor(en.getAttributeBaseValue(Attributes.FOLLOW_RANGE) * 16.0D);
+        int exploreRange = Mth.floor(handle.getAttributeBaseValue(Attributes.FOLLOW_RANGE) * 16.0D);
         try {
-            NAVIGATION_PATHFINDER.invoke(navigation, NAVIGATION_CREATE_PATHFINDER.invoke(navigation, mc));
+            NAVIGATION_PATHFINDER.invoke(navigation, NAVIGATION_CREATE_PATHFINDER.invoke(navigation, exploreRange));
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -1976,9 +2059,9 @@ public class NMSImpl implements NMSBridge {
         for (GoalSelector selector : goalSelectors) {
             try {
                 Collection<?> list = selector.getAvailableGoals();
-                if (!list.isEmpty()) {
-                    npc.data().set("selector" + i, Lists.newArrayList(list));
-                }
+                if (list.isEmpty())
+                    continue;
+                npc.data().set("selector" + i, Lists.newArrayList(list));
                 list.clear();
             } catch (Exception e) {
                 Messaging.logTr(Messages.ERROR_CLEARING_GOALS, e.getLocalizedMessage());
@@ -2485,17 +2568,24 @@ public class NMSImpl implements NMSBridge {
             return;
         if (npc.useMinecraftAI()) {
             restoreGoals(npc, entity.goalSelector, entity.targetSelector);
-            if (npc.data().has("behavior-map")) {
-                Map behavior = npc.data().get("behavior-map");
-                getBehaviorMap(entity).putAll(behavior);
-                npc.data().remove("behavior-map");
+            if (npc.data().has("brain")) {
+                try {
+                    BRAIN_SETTER.invoke(entity, npc.data().get("brain"));
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+                npc.data().remove("brain");
             }
         } else {
             clearGoals(npc, entity.goalSelector, entity.targetSelector);
             Map behaviorMap = getBehaviorMap(entity);
-            if (behaviorMap.size() > 0) {
-                npc.data().set("behavior-map", new HashMap(behaviorMap));
-                behaviorMap.clear();
+            if (!npc.data().has("brain") || behaviorMap.size() > 0) {
+                npc.data().set("brain", entity.getBrain());
+                try {
+                    BRAIN_SETTER.invoke(entity, entity.getBrain().copyWithoutBehaviors());
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -2511,6 +2601,7 @@ public class NMSImpl implements NMSBridge {
             EntityType.SILVERFISH, EntityType.SHULKER, EntityType.ENDERMITE, EntityType.ENDER_DRAGON, EntityType.BAT,
             EntityType.SLIME, EntityType.DOLPHIN, EntityType.MAGMA_CUBE, EntityType.HORSE, EntityType.GHAST,
             EntityType.HAPPY_GHAST, EntityType.SHULKER, EntityType.PHANTOM);
+    private static final MethodHandle BRAIN_SETTER = NMS.getFirstSetter(LivingEntity.class, Brain.class);
     private static final MethodHandle BUKKITENTITY_FIELD_SETTER = NMS.getSetter(Entity.class, "bukkitEntity");
     private static final MethodHandle CHUNKMAP_UPDATE_PLAYER_STATUS = NMS.getMethodHandle(ChunkMap.class, "updatePlayerStatus", true,
             ServerPlayer.class, boolean.class);
