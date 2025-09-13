@@ -9,7 +9,7 @@ paperweight.reobfArtifactConfiguration = ReobfArtifactConfiguration.MOJANG_PRODU
 
 dependencies {
     implementation(project(":citizens-main"))
-    paperweight.devBundle("com.starsrealm.nylon", "1.21.7-R0.1-20250705.122835-1")
+    paperweight.devBundle("com.starsrealms.nylon", "1.21.8-R0.1-20250828.033405-1")
 }
 
 tasks.shadowJar {
